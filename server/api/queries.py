@@ -1,6 +1,6 @@
 """Shared list queries returning JSON-ready dicts."""
 from ..auth import require_user
-from .serializers import audition_json, brief_user, clip_json, full_user, post_json
+from .serializers import audition_json, clip_json, full_user, post_json
 
 
 def musicians_list(conn, category=None):

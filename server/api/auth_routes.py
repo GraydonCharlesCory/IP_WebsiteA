@@ -21,7 +21,7 @@ def me(ctx):
 
 @ROUTER.route("GET", "/api/accounts")
 def accounts(ctx):
-    rows = ctx.db.execute("SELECT * FROM users ORDER BY category, name").fetchall()
+    rows = ctx.db.execute("SELECT * FROM users ORDER BY id").fetchall()
     people = [{**brief_user(r), "email": r["email"]} for r in rows]
     return {
         "musicians": [p for p in people if p["role"] == "musician"],
