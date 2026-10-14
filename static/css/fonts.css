@@ -1,0 +1,7 @@
+/* Fraunces and Inter (SIL OFL), latin subset, self-hosted */
+@font-face{font-family:'Fraunces';font-weight:500;font-style:normal;font-display:swap;src:url('/static/fonts/fraunces-latin-500.woff2') format('woff2')}
+@font-face{font-family:'Fraunces';font-weight:600;font-style:normal;font-display:swap;src:url('/static/fonts/fraunces-latin-500.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-weight:400;font-style:normal;font-display:swap;src:url('/static/fonts/inter-latin-400.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-weight:500;font-style:normal;font-display:swap;src:url('/static/fonts/inter-latin-400.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-weight:600;font-style:normal;font-display:swap;src:url('/static/fonts/inter-latin-400.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-weight:700;font-style:normal;font-display:swap;src:url('/static/fonts/inter-latin-400.woff2') format('woff2')}
