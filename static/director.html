@@ -3,12 +3,15 @@
 <link rel="stylesheet" href="/static/css/fonts.css">
 <link rel="stylesheet" href="/static/css/app.css">
 <link rel="stylesheet" href="/static/css/shell.css">
+<link rel="stylesheet" href="/static/css/pages/common.css">
+<link rel="stylesheet" href="/static/css/pages/director.css">
 </head><body>
 <div data-shell-header></div>
-<main class="wrap page"><div class="card pad empty"><h2>Director dashboard</h2><p class="muted">This page is being built. The shell and API are ready for it.</p></div></main>
+<main id="pageRoot"><div class="wrap page"><div class="empty"><span class="spinner"></span></div></div></main>
 <script src="/static/js/api.js"></script>
 <script src="/static/js/util.js"></script>
 <script src="/static/js/components.js"></script>
 <script src="/static/js/shell.js"></script>
-<script>Tutti.boot({ active: 'dashboard', requireRole: 'director' }).catch((e) => console.error(e));</script>
+<script src="/static/js/pages/common.js"></script>
+<script src="/static/js/pages/director.js"></script>
 </body></html>

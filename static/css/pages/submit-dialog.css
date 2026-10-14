@@ -1,0 +1,28 @@
+.scrim{position:fixed;inset:0;background:rgba(5,6,10,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.scrim.open{display:flex}
+.modal{width:100%;max-width:620px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow)}
+.mhead{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--line)}
+.steps{display:flex;gap:8px;padding:16px 24px 0}
+.steps span{flex:1;height:4px;border-radius:4px;background:var(--line)}
+.steps span.on{background:var(--brass)}
+.mbody{padding:20px 24px;display:grid;gap:16px;overflow:auto;flex:1;min-height:0}
+.mfoot{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:1px solid var(--line)}
+.mfoot .btn:disabled{opacity:.45;cursor:not-allowed}
+.pick{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.opt{border:1.5px solid var(--line);border-radius:var(--r);padding:10px;display:grid;gap:8px;cursor:pointer;background:var(--surface);align-content:start}
+.opt.on{border-color:var(--brass);box-shadow:0 0 0 3px rgba(232,176,75,.15)}
+.opt b{font-size:13px}.opt span{font-size:12px;color:var(--muted)}
+.opt .video{pointer-events:none}
+.drop{border:1.5px dashed #444a5c;border-radius:var(--r);padding:14px;text-align:center;color:var(--text-2);font-size:14px;background:var(--surface)}
+.drop.over{border-color:var(--brass)}
+.file{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.file.sel{border:1.5px solid var(--brass);box-shadow:0 0 0 3px rgba(232,176,75,.15)}
+.file .bar{height:6px;border-radius:6px;background:var(--line);margin-top:8px;overflow:hidden}
+.file .bar i{display:block;height:100%;background:var(--ok);transition:width .15s}
+.dialog-page{display:grid;gap:16px}
+.check{display:flex;gap:10px;font-size:14px;color:var(--text-2);align-items:flex-start}
+.check input{margin-top:4px;accent-color:var(--brass)}
+.done{text-align:center;padding:16px 0}
+.done .ring{width:72px;height:72px;border-radius:50%;margin:0 auto 14px;background:rgba(78,210,154,.15);display:grid;place-items:center;color:var(--ok);font-size:34px}
+.form-error{padding:10px 14px;border-radius:12px;background:#2a1820;border:1px solid #7a2c3c;font-size:13px}
+@media (max-width:980px){.pick{grid-template-columns:1fr 1fr}}

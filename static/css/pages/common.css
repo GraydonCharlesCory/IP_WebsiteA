@@ -1,0 +1,2 @@
+.private{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--muted)}
+.crumb{font-size:13px;color:var(--muted)}.crumb a:hover{color:var(--text)}
