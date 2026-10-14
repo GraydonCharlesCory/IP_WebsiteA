@@ -1,6 +1,6 @@
 # my-clips: the demo's seed clips
 
-Drop an MP4 with the exact file name below into this folder and refresh the page. Until a file is here, that clip shows a "Clip coming soon" tile. No restart or reseed needed. The videos are git-ignored, so they never get committed.
+Drop an MP4 with the exact file name below into this folder and refresh the page. Until a file is here, that clip shows a "Clip coming soon" tile. No restart or reseed needed. The videos are committed to the repo (openly licensed sample performances); see `CREDITS.md` for sources and licences.
 
 | File name | Profile | Clip title |
 |---|---|---|
