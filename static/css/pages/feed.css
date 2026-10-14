@@ -1,0 +1,28 @@
+/* Cards shared by home, section and profile (see js/pages/parts.js). */
+.post .name{font-weight:600}
+.post .name:hover{color:var(--brass-2)}
+.post-body{color:var(--text-2);white-space:pre-line}
+.aud-post{border-left:3px solid var(--brass);background:linear-gradient(90deg,rgba(232,176,75,.07),transparent 40%),var(--surface)}
+.aud-post .row{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--text-2)}
+.aud-post .posted{font-weight:400}
+.aud{padding:20px;display:grid;gap:12px;transition:.2s}
+.aud:hover{transform:translateY(-2px);border-color:#3d4356}
+.aud .top{display:flex;justify-content:space-between;align-items:center}
+.aud h3{font-size:18px}
+.aud .ens{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2)}
+.aud .foot{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+.mini-aud{display:grid;gap:4px;padding:14px 0;border-top:1px solid var(--line)}
+.mini-aud:first-of-type{border-top:0;padding-top:0}
+.mini-aud b{font-size:14px}
+.mini-aud span{font-size:12px;color:var(--muted)}
+.person{display:flex;align-items:center;gap:12px;padding:10px 0}
+.person .t{flex:1;min-width:0}
+.person b{display:block;font-size:14px}
+.person span{font-size:12px;color:var(--muted)}
+.person:hover b{color:var(--brass-2)}
+.side{display:grid;gap:18px;align-content:start}
+.side h3{font-size:17px;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+button.chip:hover{border-color:#3d4356}
+.aud .foot span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aud .foot span:last-child{white-space:nowrap}

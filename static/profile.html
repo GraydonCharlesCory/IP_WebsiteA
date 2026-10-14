@@ -3,12 +3,15 @@
 <link rel="stylesheet" href="/static/css/fonts.css">
 <link rel="stylesheet" href="/static/css/app.css">
 <link rel="stylesheet" href="/static/css/shell.css">
+<link rel="stylesheet" href="/static/css/pages/feed.css">
+<link rel="stylesheet" href="/static/css/pages/profile.css">
 </head><body>
 <div data-shell-header></div>
-<main class="wrap page"><div class="card pad empty"><h2>Profile</h2><p class="muted">This page is being built. The shell and API are ready for it.</p></div></main>
+<div id="content"><main class="wrap page"><div class="empty"><span class="spinner"></span></div></main></div>
 <script src="/static/js/api.js"></script>
 <script src="/static/js/util.js"></script>
 <script src="/static/js/components.js"></script>
 <script src="/static/js/shell.js"></script>
-<script>Tutti.boot({ active: '', requireAuth: false }).catch((e) => console.error(e));</script>
+<script src="/static/js/pages/parts.js"></script>
+<script src="/static/js/pages/profile.js"></script>
 </body></html>
