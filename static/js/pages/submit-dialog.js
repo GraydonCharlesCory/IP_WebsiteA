@@ -3,21 +3,12 @@
 (function () {
   const { esc, parseTime, duration } = Tutti.util;
   const { videoTile, wire } = Tutti.components;
+  const { fileProblem, openScrim, dropZoneHtml, selectedFileHtml, bindDropZone } = Tutti.dialogParts;
   const STEP_TITLES = ['Choose your clip', 'Add details', 'Review & submit', 'Done'];
   const TIMESTAMP_ROWS = 3;
-  const ICON_UPLOAD = '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--brass-2)" stroke-width="2" stroke-linecap="round" style="flex:none"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>';
-
-  const megabytes = (bytes) => `${(bytes / (1024 * 1024)).toFixed(bytes < 10 * 1024 * 1024 ? 1 : 0)} MB`;
-  const isMp4 = (file) => file.type === 'video/mp4' || /\.mp4$/i.test(file.name);
-
   function open(audition, user, onSubmitted) {
     const state = { step: 1, file: null, clip: null, clips: [], note: '', timestamps: [], confirmed: false, busy: false, error: '' };
-    const scrim = document.createElement('div');
-    scrim.className = 'scrim open';
-    document.body.appendChild(scrim);
-    const close = () => { scrim.remove(); document.removeEventListener('keydown', onKey); };
-    const onKey = (event) => { if (event.key === 'Escape' && !state.busy) close(); };
-    document.addEventListener('keydown', onKey);
+    const { scrim, close } = openScrim(() => state.busy);
 
     const chosenName = () => (state.file ? state.file.name : state.clip ? state.clip.title : '');
     const hasChoice = () => Boolean(state.file || state.clip);
@@ -26,13 +17,7 @@
       const picks = state.clips.filter((c) => c.available).map((c) => `
         <div class="opt ${state.clip && state.clip.id === c.id ? 'on' : ''}" data-clip-id="${c.id}">
           ${videoTile(c)}<b>${esc(c.title)}</b><span>${esc(c.instrument || 'Profile clip')}</span></div>`).join('');
-      const file = state.file ? `<div class="file sel"><div style="flex:1"><div style="display:flex;justify-content:space-between;gap:8px;font-size:14px">
-          <b>${esc(state.file.name)}</b><span class="tag ok">✓ Selected</span></div>
-          <div class="small muted" style="margin-top:4px">${megabytes(state.file.size)}</div></div></div>` : '';
-      return `<label class="drop" id="dropZone" style="display:flex;gap:12px;align-items:center;justify-content:center;cursor:pointer">
-          ${ICON_UPLOAD}<div style="text-align:left"><b style="color:var(--text)">Drag an MP4 here</b> or <span style="color:var(--brass-2);font-weight:600">browse</span>
-          <div class="small muted">MP4 · up to 500 MB</div></div>
-          <input type="file" id="fileInput" accept="video/mp4,.mp4" hidden></label>${file}
+      return `${dropZoneHtml()}${selectedFileHtml(state.file)}
         <div class="eyebrow">Or pick from your profile</div>
         ${picks ? `<div class="pick">${picks}</div>` : '<p class="small muted">You have no playable profile clips yet. Upload an MP4 above.</p>'}`;
     }
@@ -81,8 +66,8 @@
 
     function chooseFile(file) {
       if (!file) return;
-      if (!isMp4(file)) { state.error = 'That file is not an MP4. Export your recording as .mp4 and try again.'; return render(); }
-      if (file.size > api.MAX_UPLOAD_BYTES) { state.error = 'That file is over the 500 MB limit. Export a shorter or smaller MP4.'; return render(); }
+      const problem = fileProblem(file);
+      if (problem) { state.error = problem; return render(); }
       Object.assign(state, { file, clip: null, error: '' });
       render();
     }
@@ -138,12 +123,7 @@
         render();
       };
       if (state.step === 1) {
-        const input = $('#fileInput');
-        input.onchange = () => chooseFile(input.files[0]);
-        const zone = $('#dropZone');
-        zone.ondragover = (event) => { event.preventDefault(); zone.classList.add('over'); };
-        zone.ondragleave = () => zone.classList.remove('over');
-        zone.ondrop = (event) => { event.preventDefault(); zone.classList.remove('over'); chooseFile(event.dataTransfer.files[0]); };
+        bindDropZone(scrim, chooseFile);
         scrim.querySelectorAll('.opt').forEach((option) => {
           option.onclick = (event) => {
             event.preventDefault();

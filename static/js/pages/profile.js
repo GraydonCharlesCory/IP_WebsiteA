@@ -30,15 +30,29 @@
     return `<aside class="side">${card('About', `<p class="t2 small">${esc(musician.bio || 'This musician has not written a bio yet.')}</p>`)}${card('Details', `<div class="kv">${details}</div>`)}</aside>`;
   }
 
-  function renderMusician({ musician, clips, posts, stats }) {
+  const isOwnProfile = (user, musician) => Boolean(user && user.role === 'musician' && user.handle === musician.handle);
+
+  async function refreshAfterUpload(user) {
+    try {
+      renderMusician(await api.musician(handle), user);
+      Tutti.toast('Clip uploaded', 'ok');
+    } catch (error) {
+      Tutti.reportError(error, 'profile refresh after upload');
+    }
+  }
+
+  function renderMusician({ musician, clips, posts, stats }, user) {
     const facts = [musician.instrument, musician.location, musician.ensemble].filter(Boolean).map((f) => `<span>${esc(f)}</span>`).join('');
     document.title = `Tutti — ${musician.name}`;
     document.documentElement.style.setProperty('--acc', `var(--${section(musician.category).css})`);
     content.innerHTML = `<div class="cover"></div><main class="wrap">
-      <div class="idrow">${avatar(musician, 'lg')}<div class="who"><div class="name-row"><h1>${esc(musician.name)}</h1>${categoryTag(musician.category)}</div><div class="facts">${facts}</div></div></div>
+      <div class="idrow">${avatar(musician, 'lg')}<div class="who"><div class="name-row"><h1>${esc(musician.name)}</h1>${categoryTag(musician.category)}</div><div class="facts">${facts}</div></div>
+        ${isOwnProfile(user, musician) ? '<button class="btn btn-primary" id="uploadClipButton" type="button">Upload a clip</button>' : ''}</div>
       <div class="stats"><div><b>${stats.clips}</b><span>Clips</span></div><div><b>${stats.posts}</b><span>Posts</span></div></div>
       <div class="layout"><div>${clipsSection(clips)}${postsSection(posts, musician)}</div>${sidebar(musician)}</div></main>`;
     Tutti.components.wire(content);
+    const uploadButton = document.getElementById('uploadClipButton');
+    if (uploadButton) uploadButton.onclick = () => Tutti.uploadClipDialog.open(() => refreshAfterUpload(user));
   }
 
   /* /api/musicians/<handle> only knows musicians; a director's handle is looked up in the public account list. */
@@ -54,10 +68,10 @@
       : message('Profile not found', 'No musician has that handle.', '<p style="margin-top:16px"><a class="btn btn-ghost" href="home.html">Back to home</a></p>')}</main>`;
   }
 
-  async function load() {
+  async function load(user) {
     if (!handle) return renderDirectorOrMissing();
     try {
-      renderMusician(await api.musician(handle));
+      renderMusician(await api.musician(handle), user);
     } catch (error) {
       if (error.status !== 404) throw error;
       await renderDirectorOrMissing();

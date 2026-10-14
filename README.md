@@ -31,12 +31,18 @@ The sign-in page has "Sign in as musician" / "Sign in as director" one-click but
 
 ## Demo flow
 
-1. Sign in as a musician (Jordan Wells, say), open an audition (Honors Jazz Combo), submit a clip (upload an MP4 or pick a profile clip).
+1. Sign in as a musician (Jordan Wells, say), open an audition (Honors Jazz Combo), submit a clip (pick an MP4 from `demo-uploads/` in the file picker, or choose a profile clip). Optionally open your own profile and use "Upload a clip" the same way.
 2. Open the account switcher and switch to that audition's director (Priya Raman).
 3. Open "My auditions", then the new submission: play the video, score the five criteria, add comments and timestamped notes, shortlist or pass.
 4. Switch to another director or back to the musician: they cannot see the submission's scores, comments or video (the musician only sees "Submitted").
 
 Dr. Holloway's audition already has two submissions (Leo: new; Dana: scored and shortlisted), so the dashboard is not empty.
+
+## Live demo: test folder
+
+`demo-uploads/` holds sample performances for the live demo. In the musician's "Submit a clip" dialog (audition page) or the "Upload a clip" dialog (own profile, `profile.html?h=<your handle>`; hidden for other viewers), choose a file from that folder. Drop your own MP4s there too.
+
+`my-clips/` ships with openly licensed sample clips (credits in `my-clips/CREDITS.md`). Replace any of them with your own by keeping the file name. `python3 run.py --reset` only wipes `data/`; it keeps both `my-clips/` and `demo-uploads/` (covered by `tests/test_reset.py`).
 
 ## Seed clips: `my-clips/`
 
@@ -104,6 +110,7 @@ Uploads are streamed to disk in chunks; limit 500 MB; the body must be `video/mp
 ## Front-end shell (for page authors)
 
 Pages live in `static/` and are served at the site root (`/home.html`) with assets under `/static/`. Placeholders exist for `home`, `section` (`section.html?s=students|orchestral|jazz`), `profile` (`profile.html?h=<handle>`), `audition` (`?id=`), `director`, `review` (`?id=<submission id>`).
+Dialogs: "Submit a clip" (`submit-dialog.js`, audition page) and "Upload a clip" (`upload-clip-dialog.js`, own profile); both share `dialog-parts.js` (scrim, MP4 drop zone, file checks) and `submit-dialog.css`.
 
 Include, in this order: `/static/css/fonts.css`, `app.css`, `shell.css`; scripts `api.js`, `util.js`, `components.js`, `shell.js`; add `<div data-shell-header></div>` at the top of `<body>`; then:
 
