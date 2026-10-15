@@ -1,0 +1,10 @@
+/* Ensemble page: ensemble.html */
+.ens-head{display:flex;align-items:center;gap:22px;margin:6px 0 4px}
+.ens-head h1{margin:10px 0 0}
+.season{margin-bottom:14px}
+.highlights li{display:block}
+.layout .opp-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.roster-row{display:grid;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.roster-row span{font-size:13px;color:var(--muted)}
+.stack .ens b{display:block}

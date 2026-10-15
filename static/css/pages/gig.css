@@ -1,0 +1,14 @@
+/* Gig page: gig.html */
+.band .tags{margin-bottom:6px}
+.band .ens{color:var(--text-2)}
+.avail-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.avail{height:42px;border-radius:999px;border:1px solid var(--line);background:var(--bg-2);font-weight:600;font-size:14px;color:var(--text-2);transition:.15s}
+.avail:hover:not(:disabled){border-color:#3d4356;color:var(--text)}
+.avail:disabled{opacity:.6;cursor:wait}
+.avail.available.on{background:rgba(78,210,154,.16);border-color:var(--ok);color:var(--ok)}
+.avail.maybe.on{background:rgba(242,165,65,.16);border-color:var(--warn);color:var(--warn)}
+.avail.unavailable.on{background:var(--surface-2);border-color:var(--muted);color:var(--text)}
+.sub-group{display:grid;gap:8px}
+.sub-row .who:hover b{color:var(--brass-2)}
+.sub-msg{height:32px;padding:0 14px;font-size:13px}
+.m-lead{margin:-6px 0 14px}
