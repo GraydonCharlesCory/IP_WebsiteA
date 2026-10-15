@@ -1,5 +1,6 @@
 """Direct messages between any two signed-in users; only the two participants can read a conversation."""
 from ..auth import require_user
+from ..config import log
 from ..db import now_iso
 from ..errors import bad_request, forbidden, not_found
 from ..responses import JsonResponse
@@ -32,6 +33,13 @@ def _participant_conversation(ctx, conversation_id: int):
     return row
 
 
+def _hidden_from_director(ctx, submission_id: int) -> bool:
+    """True when the viewer is the audition's director and the submission is still anonymous."""
+    submission = ctx.db.execute("SELECT * FROM submissions WHERE id=?", (submission_id,)).fetchone()
+    audition = ctx.db.execute("SELECT * FROM auditions WHERE id=?", (submission["audition_id"],)).fetchone()
+    return audition["director_id"] == ctx.user["id"] and is_anonymous(audition, submission)
+
+
 def _conversation_json(ctx, row) -> dict:
     me = ctx.user["id"]
     other = get_user(ctx.db, row["user_high"] if row["user_low"] == me else row["user_low"])
@@ -40,9 +48,12 @@ def _conversation_json(ctx, row) -> dict:
         "SELECT COUNT(*) FROM messages WHERE conversation_id=? AND sender_id!=? AND read_at IS NULL", (row["id"], me)
     ).fetchone()[0]
     audition = ctx.db.execute("SELECT id, title FROM auditions WHERE id=?", (row["audition_id"],)).fetchone() if row["audition_id"] else None
+    submission_id = row["submission_id"]
+    if submission_id and _hidden_from_director(ctx, submission_id):
+        audition, submission_id = None, None  # a link made before blind review was switched on must not unmask the applicant
     return {
         "id": row["id"], "other": brief_user(other),
-        "context": {"opportunity": dict(audition) if audition else None, "submission_id": row["submission_id"]},
+        "context": {"opportunity": dict(audition) if audition else None, "submission_id": submission_id},
         "last_message": _message_json(last, me) if last else None, "unread_count": unread,
         "updated": last["created"] if last else row["created"],
     }
@@ -76,8 +87,9 @@ def _context_ids(ctx, data) -> tuple:
         me = ctx.user["id"]
         if not submission or me not in (submission["musician_id"], audition["director_id"]):
             raise forbidden("You can only link a conversation to your own submission or one sent to your audition.")
-        if me == audition["director_id"] and is_anonymous(audition, submission):
-            raise forbidden("This applicant is anonymous under blind review. Reveal their identity before messaging them.")
+        if is_anonymous(audition, submission):
+            log.info("Refused linking a conversation to blind submission %s for user %s", submission["id"], me)
+            raise forbidden("This submission is under blind review, so it cannot be linked to a conversation until the director reveals the applicant.")
         audition_id = audition_id or audition["id"]
     return audition_id, submission_id
 

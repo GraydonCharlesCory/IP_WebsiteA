@@ -56,13 +56,40 @@ class BlindReviewTests(ServerTestCase):
         item = self.elena.json("GET", self.listing_path)[1]["submissions"][0]
         status, data = self.elena.json("POST", "/api/conversations", {"user_id": 1, "submission_id": item["id"], "body": "hi"})
         self.assertEqual(status, 403)
-        self.assertIn("anonymous", data["error"])
+        self.assertIn("blind review", data["error"])
 
-    def test_other_directors_and_musicians_cannot_toggle_or_reveal(self):
-        item = self.elena.json("GET", self.listing_path)[1]["submissions"][0]
-        for who, expected in (("marcus-bell", 403), ("adam-reyes", 403), (None, 401)):
-            self.assertEqual(self.client(who).json("POST", f"/api/submissions/{item['id']}/reveal")[0], expected)
-            self.assertEqual(self.client(who).json("PUT", f"/api/auditions/{self.audition['id']}", {"blind_review": False})[0], expected)
+    def test_musician_cannot_link_their_blind_submission_to_a_conversation(self):
+        adam = self.client("adam-reyes")
+        sub_id = [a for a in adam.json("GET", "/api/my/applications")[1]["applications"] if a["audition_id"] == self.audition["id"]][0]["id"]
+        elena_id = self.elena.json("GET", "/api/me")[1]["user"]["id"]
+        status, data = adam.json("POST", "/api/conversations", {"user_id": elena_id, "submission_id": sub_id, "body": "hi"})
+        self.assertEqual(status, 403)
+        self.assertIn("blind review", data["error"])
+        self.assertEqual(self.elena.json("GET", "/api/conversations")[1]["conversations"], [])
+
+
+
+
+class BlindLinkAfterTheFactTests(ServerTestCase):
+    def test_existing_link_is_hidden_from_the_director_once_blind_is_on(self):
+        elena = self.client("elena-voss")
+        audition = find_opportunity(elena, "Section Seat")
+        elena.json("PUT", f"/api/auditions/{audition['id']}", {"blind_review": False})
+        listing = elena.json("GET", f"/api/auditions/{audition['id']}/submissions")[1]["submissions"]
+        adam_sub = [s for s in listing if s["musician"]["handle"] == "adam-reyes"][0]["id"]
+        elena_id = elena.json("GET", "/api/me")[1]["user"]["id"]
+        adam = self.client("adam-reyes")
+        status, _ = adam.json("POST", "/api/conversations", {"user_id": elena_id, "submission_id": adam_sub, "body": "Hello"})
+        self.assertEqual(status, 201)
+        self.assertEqual(elena.json("GET", "/api/conversations")[1]["conversations"][0]["context"]["submission_id"], adam_sub)
+        elena.json("PUT", f"/api/auditions/{audition['id']}", {"blind_review": True})
+        context = elena.json("GET", "/api/conversations")[1]["conversations"][0]["context"]
+        self.assertEqual(context, {"opportunity": None, "submission_id": None})
+        self.assertEqual(adam.json("GET", "/api/conversations")[1]["conversations"][0]["context"]["submission_id"], adam_sub)
+        # while blind, Adam cannot (re)link it either
+        status, data = adam.json("POST", "/api/conversations", {"user_id": elena_id, "submission_id": adam_sub})
+        self.assertEqual(status, 403)
+        self.assertIn("blind review", data["error"])
 
 
 class BlindRevealTests(ServerTestCase):

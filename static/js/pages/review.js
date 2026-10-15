@@ -17,7 +17,7 @@
         <div class="player-tile"></div><div class="marker-strip" aria-label="Chapters and notes on the video timeline"></div><div class="chapter-list"></div>
         <div class="mrow">${avatar(m)}<div class="t"><b style="font-size:17px">${esc(m.name)}</b>
           <div class="small muted">${esc([m.instrument, m.location].filter(Boolean).join(' · '))} · submitted ${timeAgo(sub.created)}</div></div>
-          <a class="btn btn-ghost" href="profile.html?h=${encodeURIComponent(m.handle)}">View public profile</a></div>
+          ${m.handle ? `<a class="btn btn-ghost" href="profile.html?h=${encodeURIComponent(m.handle)}">View public profile</a>` : ''}</div>
         ${sub.note ? `<div class="note"><div class="eyebrow">Note from ${esc(m.name.split(' ')[0])}</div><p>${esc(sub.note)}</p></div>` : ''}
         ${clips.length ? `<div style="margin-top:26px"><div class="eyebrow" style="margin-bottom:12px">${esc(m.name.split(' ')[0])}'s public clips</div><div class="clip-row">${clips.map(clipCard).join('')}</div></div>` : ''}
       </section>
