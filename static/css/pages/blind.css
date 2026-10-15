@@ -1,0 +1,14 @@
+/* Blind review: neutral avatar, switch and banner (director and review pages) */
+.av.g0{background:var(--surface-2);color:var(--muted);border:1px dashed var(--line)}
+.blind-banner{display:flex;gap:12px;align-items:center;padding:14px 18px;margin-bottom:20px;border-radius:var(--r);background:rgba(124,108,242,.12);border:1px solid rgba(124,108,242,.4);font-size:14px;color:var(--text-2)}
+.blind-banner b{color:var(--text)}
+.blind-banner .btn{margin-left:auto;height:34px;flex:none}
+.switch{display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--text-2);cursor:pointer}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch .track{flex:none;width:40px;height:22px;border-radius:22px;background:var(--surface-2);border:1px solid var(--line);position:relative;transition:background .15s}
+.switch .track:after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text-2);transition:transform .15s}
+.switch input:checked + .track{background:var(--brass);border-color:var(--brass)}
+.switch input:checked + .track:after{transform:translateX(18px);background:var(--brass-ink)}
+.switch input:focus-visible + .track{outline:2px solid rgba(232,176,75,.5)}
+.switch input:disabled + .track{opacity:.5}
+.switch b{color:var(--text);display:block;font-size:14px}

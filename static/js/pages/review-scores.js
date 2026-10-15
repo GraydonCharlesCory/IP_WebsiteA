@@ -39,5 +39,5 @@
     return { scores: () => ({ ...scores }), average: () => average(scores) };
   }
 
-  Tutti.reviewScores = { mount, averageMarkup };
+  Tutti.reviewScores = { mount, averageMarkup, average, CRITERIA };
 })();

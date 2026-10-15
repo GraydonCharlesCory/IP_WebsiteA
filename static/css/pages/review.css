@@ -45,3 +45,15 @@
 .saved.on{display:flex}
 .saved.failed{color:#f07c90}
 @media (max-width:1050px){.layout{grid-template-columns:1fr}.panel{position:static}}
+.dec{padding:16px 22px;display:grid;gap:10px;border-top:1px solid var(--line)}
+.dec .row3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dec .btn-block{grid-column:1/-1}
+.dec-state{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);flex-wrap:wrap}
+.fb{padding:18px 22px;display:grid;gap:12px;border-top:1px solid var(--line)}
+.fb-head{display:flex;justify-content:space-between;align-items:center}
+.fb-preview{padding:14px 16px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);display:grid;gap:8px}
+.fb-avg{font-family:var(--font-display);font-size:30px;font-weight:600;color:var(--brass-2)}
+.fb-avg small{font-family:var(--font-ui);font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.fb-row{display:flex;justify-content:space-between;font-size:13px;color:var(--text-2)}
+.fb-comments{font-size:13px;color:var(--text-2);white-space:pre-wrap}
+.fb-actions{display:flex;gap:10px;flex-wrap:wrap}

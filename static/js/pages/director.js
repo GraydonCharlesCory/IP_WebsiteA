@@ -1,7 +1,8 @@
 /* Director dashboard: director.html (optional ?audition=<id> picks the audition shown) */
 (function () {
   const { esc, date, timeAgo, daysUntil, queryParam } = Tutti.util;
-  const { avatar, categoryTag, statusTag } = Tutti.components;
+  const { categoryTag, statusTag } = Tutti.components;
+  const { applicantAvatar, directorRound, directorGigs } = Tutti;
   const { privateNote, showFailure } = Tutti.pageUtil;
   const root = document.getElementById('pageRoot');
   const FILTERS = [
@@ -9,6 +10,8 @@
     { key: 'new', label: 'New', test: (s) => s.status === 'submitted' },
     { key: 'reviewed', label: 'Reviewed', test: (s) => s.reviewed },
     { key: 'shortlisted', label: 'Shortlist', test: (s) => s.status === 'shortlisted' },
+    { key: 'callback', label: 'Callback', test: (s) => s.status === 'callback' },
+    { key: 'not_selected', label: 'Not selected', test: (s) => s.status === 'not_selected' },
   ];
   const state = { dashboard: null, auditionId: null, submissions: [], filter: 'all' };
 
@@ -38,8 +41,8 @@
     const score = s.average === null ? '<span class="muted">—</span>' : `<span class="score">${s.average.toFixed(1)}<small>/10</small></span>`;
     const label = s.status === 'submitted' ? 'Review' : 'Open';
     return `<tr class="${s.status === 'submitted' ? 'new' : ''}" data-href="review.html?id=${s.id}">
-      <td><a class="mus" href="review.html?id=${s.id}">${avatar(s.musician)}<div><b>${esc(s.musician.name)}</b>
-        <span>${esc(s.musician.instrument)}${s.musician.location ? ` · ${esc(s.musician.location)}` : ''} · ${s.source === 'upload' ? 'Uploaded clip' : 'Profile clip'}</span></div></a></td>
+      <td><a class="mus" href="review.html?id=${s.id}">${applicantAvatar(s.musician)}<div><b>${esc(s.musician.name)}</b>
+        <span>${s.musician.anonymous ? 'Identity hidden · ' : ''}${esc(s.musician.instrument)}${s.musician.location ? ` · ${esc(s.musician.location)}` : ''} · ${s.source === 'upload' ? 'Uploaded clip' : 'Profile clip'}</span></div></a></td>
       <td class="hide t2">${timeAgo(s.created)}</td><td>${score}</td><td>${statusTag(s.status)}</td>
       <td><a class="btn ${s.status === 'submitted' ? 'btn-primary' : 'btn-ghost'}" style="height:34px" href="review.html?id=${s.id}">${label}</a></td></tr>`;
   }
@@ -56,7 +59,8 @@
       : '<div class="empty">No submissions here yet.</div>';
     return `<div class="panel-h"><div><h2 style="font-size:22px">${esc(audition.title)} — submissions</h2>
         <div style="margin-top:6px">${privateNote('Only you can see these submissions, scores and comments.')}</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">${chips}</div></div>${body}`;
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${chips}</div></div>
+      <div class="round-bar">${directorRound.roundMarkup(audition)}</div>${body}`;
   }
 
   function render() {
@@ -67,13 +71,24 @@
         <h1 style="font-size:clamp(28px,3.4vw,40px);margin-top:6px">Welcome back, ${esc(director.name)}.</h1>
         <p class="t2" style="margin-top:6px">You have <b style="color:var(--text)">${newCount} new submission${newCount === 1 ? '' : 's'}</b> waiting for review.</p></div></div>
       ${kpiRow(state.dashboard)}
-      <div class="layout"><div class="alist"><div class="eyebrow">My auditions</div>${auditions.map(auditionItem).join('') || '<p class="muted small">No auditions yet.</p>'}</div>
+      <div class="layout"><div class="alist"><div class="eyebrow">My auditions</div>${auditions.map(auditionItem).join('') || '<p class="muted small">No auditions yet.</p>'}${directorGigs.markup(state.dashboard.gigs)}</div>
       <div class="card" id="submissionsPanel" style="overflow:hidden">${submissionsPanel()}</div></div></div>`;
     root.querySelectorAll('[data-audition-id]').forEach((el) => { el.onclick = () => selectAudition(Number(el.dataset.auditionId)); });
     wirePanel();
   }
 
+  /* Persists the switch, then reloads the table: turning blind review off reveals every applicant. */
+  async function setBlindReview(auditionId, enabled) {
+    const { audition } = await api.editAudition(auditionId, { blind_review: enabled });
+    Object.assign(state.dashboard.auditions.find((a) => a.id === auditionId), audition);
+    state.submissions = (await api.auditionSubmissions(auditionId)).submissions;
+    refreshPanel();
+    Tutti.toast(enabled ? 'Blind review is on: names and photos are hidden.' : 'Blind review is off: applicants are visible.', 'ok');
+  }
+
   function wirePanel() {
+    const audition = state.dashboard.auditions.find((a) => a.id === state.auditionId);
+    if (audition) directorRound.wireSwitch(root, audition, setBlindReview);
     root.querySelectorAll('[data-filter]').forEach((chip) => {
       chip.onclick = () => { state.filter = chip.dataset.filter; refreshPanel(); };
     });
