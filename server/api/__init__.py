@@ -4,5 +4,6 @@ from ..router import Router
 ROUTER = Router()
 
 from . import (  # noqa: E402,F401  (imports register the routes)
-    auth_routes, media_routes, sections, musicians, posts_clips, auditions, submissions, reviews, director,
+    auth_routes, media_routes, sections, musicians, teachers, posts_clips, ensembles, opportunities, gigs, submissions,
+    submission_workflow, applications, reviews, credibility, messaging, director,
 )

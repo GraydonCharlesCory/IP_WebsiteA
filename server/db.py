@@ -1,14 +1,20 @@
 """SQLite access: one short-lived connection per request."""
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-SCHEMA_FILE = Path(__file__).with_name("schema.sql")
+SCHEMA_DIR = Path(__file__).with_name("schema")
+SCHEMA_VERSION = 2  # 1 = the v1 demo; 2 adds opportunities, ensembles, messaging, credibility
 
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def days_ago(days: float) -> str:
+    """Timestamp a given number of days (an hour more) in the past, for seed data."""
+    return (datetime.now(timezone.utc) - timedelta(days=days, hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def connect(db_path: Path) -> sqlite3.Connection:
@@ -18,11 +24,22 @@ def connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
+class SchemaOutOfDate(Exception):
+    """The data/ folder was created by an older version of Tutti."""
+
+
 def init_schema(db_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = connect(db_path)
     try:
-        conn.executescript(SCHEMA_FILE.read_text())
+        has_tables = conn.execute("SELECT 1 FROM sqlite_master WHERE name='users'").fetchone()
+        if has_tables and conn.execute("PRAGMA user_version").fetchone()[0] < SCHEMA_VERSION:
+            raise SchemaOutOfDate(
+                f"{db_path} was created by an older version of Tutti. Start with `python3 run.py --reset` to rebuild the demo data."
+            )
+        for schema_file in sorted(SCHEMA_DIR.glob("*.sql")):
+            conn.executescript(schema_file.read_text())
+        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         conn.commit()
     finally:
         conn.close()

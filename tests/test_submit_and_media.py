@@ -13,7 +13,7 @@ class SubmitTests(ServerTestCase):
         priya = self.client("priya-raman")
         audition_id = priya.json("GET", "/api/auditions?mine=1")[1]["auditions"][0]["id"]
         status, data = jordan.upload(f"/api/auditions/{audition_id}/submissions?note=Hello&timestamps=%5B%7B%22time%22%3A5%2C%22label%22%3A%22Etude%22%7D%5D")
-        self.assertEqual((status, data["submission"]["status"]), (201, "Submitted"))
+        self.assertEqual((status, data["submission"]["status"]), (201, "submitted"))
         submission_id = data["submission"]["id"]
         self.assertEqual(jordan.json("POST", f"/api/auditions/{audition_id}/submissions", {"clip_id": 1})[0], 409)
         detail = priya.json("GET", f"/api/submissions/{submission_id}")[1]["submission"]

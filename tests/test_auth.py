@@ -25,8 +25,8 @@ class AuthTests(ServerTestCase):
     def test_switch_account_changes_user(self):
         client = self.client("leo-marquez")
         accounts = client.json("GET", "/api/accounts")[1]
-        self.assertEqual(len(accounts["musicians"]), 5)
-        self.assertEqual(len(accounts["directors"]), 3)
+        self.assertEqual(len(accounts["musicians"]), 9)
+        self.assertEqual(len(accounts["directors"]), 6)
         director_id = accounts["directors"][0]["id"]
         client.json("POST", "/api/switch", {"user_id": director_id})
         self.assertEqual(client.json("GET", "/api/me")[1]["user"]["id"], director_id)

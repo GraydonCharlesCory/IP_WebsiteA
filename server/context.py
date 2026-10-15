@@ -9,11 +9,12 @@ MAX_JSON_BYTES = 1024 * 1024
 
 
 class Context:
-    def __init__(self, handler, settings, conn, params, query_string):
+    def __init__(self, handler, settings, conn, params, query_string, path=""):
         self.handler = handler
         self.settings = settings
         self.db = conn
         self.params = params
+        self.path = path
         self.query = {k: v[-1] for k, v in parse_qs(query_string).items()}
         self.user = None
         self.cookie_header = None  # Set-Cookie value, filled by sign-in/out handlers

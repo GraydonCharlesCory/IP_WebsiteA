@@ -5,6 +5,7 @@ import logging
 import sys
 
 from server.app import make_server
+from server.db import SchemaOutOfDate
 from server.config import Settings, log
 from server.setup import prepare_data
 
@@ -19,6 +20,9 @@ def main() -> int:
     try:
         prepare_data(settings, reset=args.reset)
         server = make_server(settings, args.port)
+    except SchemaOutOfDate as error:
+        log.error("%s", error)
+        return 1
     except OSError as error:
         log.error("Could not start on port %d: %s. Try another with --port.", args.port, error)
         return 1

@@ -6,8 +6,8 @@ from ..errors import bad_request
 from . import ROUTER
 from .lookups import owned_submission
 from .serializers import REVIEW_CRITERIA, review_json
+from .statuses import DECISION_TO_STATUS
 
-DECISION_TO_STATUS = {"shortlist": "shortlisted", "pass": "passed"}
 
 
 def _score(value, name):
@@ -61,7 +61,7 @@ def save_review(ctx):
         " updated=excluded.updated",
         (submission["id"], *(scores[n] for n in REVIEW_CRITERIA), average_of(scores), comments, json.dumps(notes), decision, now_iso()),
     )
-    if decision:
+    if decision and decision != current["decision"]:  # an auto-save repeating a decision must not undo a callback
         ctx.db.execute("UPDATE submissions SET status=? WHERE id=?", (DECISION_TO_STATUS[decision], submission["id"]))
     ctx.db.commit()
     saved = ctx.db.execute("SELECT * FROM reviews WHERE submission_id=?", (submission["id"],)).fetchone()

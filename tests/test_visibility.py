@@ -30,7 +30,7 @@ class PublicAndSignedInTests(ServerTestCase):
     def test_auditions_need_sign_in(self):
         self.assertEqual(self.client().json("GET", "/api/auditions")[0], 401)
         self.assertIsNone(self.client().json("GET", "/api/sections/jazz")[1]["auditions"])
-        self.assertEqual(len(self.client("leo-marquez").json("GET", "/api/auditions")[1]["auditions"]), 3)
+        self.assertEqual(len(self.client("leo-marquez").json("GET", "/api/auditions")[1]["auditions"]), 6)
 
     def test_only_directors_write_auditions(self):
         body = {"title": "Bass", "ensemble": "X", "category": "jazz", "deadline": "2026-11-30"}
@@ -77,13 +77,13 @@ class SubmissionPrivacyTests(ServerTestCase):
         for path in ("/data/uploads/submissions/x.mp4", "/static/../data/tutti.db", "/media/uploads/x.mp4"):
             self.assertEqual(self.client().request("GET", path)[0], 404)
 
-    def test_musician_sees_submitted_but_never_scores(self):
+    def test_musician_sees_status_but_never_unshared_scores(self):
         dana = self.client("dana-brooks")  # seeded submission carries a score and a comment
         status, data = dana.json("GET", "/api/my/submissions")
-        self.assertEqual(data["submissions"][0]["status"], "Submitted")
+        self.assertEqual(data["submissions"][0]["status"], "shortlisted")
         self.assertNotIn("review", str(data).lower())
         audition_id = data["submissions"][0]["audition_id"]
         detail = dana.json("GET", f"/api/auditions/{audition_id}")[1]["audition"]
-        self.assertEqual(detail["my_submission"]["status"], "Submitted")
+        self.assertEqual(detail["my_submission"]["status"], "shortlisted")
         self.assertNotIn("average", str(detail))
         self.assertNotIn("Fast, clean", str(detail) + str(data))

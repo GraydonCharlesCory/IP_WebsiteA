@@ -37,3 +37,8 @@ def owned_submission(ctx, submission_id: int):
     if not submission:
         raise not_found("That submission does not exist.")
     return submission, owned_audition(ctx, submission["audition_id"])
+
+
+def is_anonymous(audition, submission) -> bool:
+    """True while blind review hides this applicant's identity from the director."""
+    return bool(audition["blind_review"]) and not submission["identity_revealed"]

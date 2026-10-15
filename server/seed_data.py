@@ -26,7 +26,34 @@ USERS = [
      "Music director of the Lakeshore Symphony. Builds sections that breathe together.", "Chicago, IL", 2),
     ("director", "Priya Raman", "priya-raman", "students", "Educator", "Bay Area Youth Jazz All-Stars",
      "Runs the Bay Area Youth Jazz All-Stars, an honors program for players aged 14 to 18.", "Oakland, CA", 2),
+    ("musician", "Adam Reyes", "adam-reyes", "orchestral", "Violin", "",
+     "Orchestral violinist and AFM member. Section player in regional orchestras; flies only to auditions that fit the repertoire and the schedule, and asks every panel for specific feedback.",
+     "New York, NY", 3),
+    ("musician", "Ronald Pierce", "ronald-pierce", "jazz", "Trombone", "",
+     "Denver jazz trombonist. Weighs every gig by the three M's: Money, Musicians, Music. Teaches lessons and clinics, and judges regional jazz festivals.",
+     "Denver, CO", 5),
+    ("musician", "Alex Chen", "alex-chen", "students", "Guitar", "",
+     "Third-year college guitarist who plays jazz and funk. Wants to find bands, auditions and deadlines in one place instead of through friends of friends.",
+     "Boulder, CO", 1),
+    ("musician", "Sofia Lindgren", "sofia-lindgren", "orchestral", "Violin", "",
+     "Violinist and chamber player auditioning for her first full-time orchestra seat.", "Minneapolis, MN", 2),
+    ("director", "Marcus Bell", "marcus-bell", "jazz", "Bandleader", "Mile High Jazz Collective",
+     "Bandleader and booker for the Mile High Jazz Collective, Denver's working jazz company. Keeps a sub list so no gig goes uncovered.",
+     "Denver, CO", 4),
+    ("director", "Naomi Castellanos", "naomi-castellanos", "orchestral", "Conductor", "Rocky Mountain Chamber Orchestra",
+     "Music director of the Rocky Mountain Chamber Orchestra. Programs new music beside the classics and wants players who listen.",
+     "Denver, CO", 6),
+    ("director", "Prof. Tomás Ibarra", "tomas-ibarra", "students", "Educator", "Front Range University Jazz Ensemble",
+     "Directs jazz studies at Front Range University and leads the university's flagship jazz ensemble.",
+     "Boulder, CO", 1),
 ]
+
+# handle -> (lessons/clinics blurb, instruments taught, rate)
+TEACHERS = {
+    "ronald-pierce": ("Private trombone lessons (jazz and classical), improvisation clinics for school bands, and festival adjudication.",
+                      ["Trombone", "Euphonium", "Jazz improvisation"], "$70 per hour; first lesson free"),
+    "maya-okafor": ("Beginner and intermediate cello lessons on weekends, in person or online.", ["Cello"], "$45 per half hour"),
+}
 
 # owner handle, title, my-clips file name, instrument
 CLIPS = [
@@ -41,6 +68,10 @@ CLIPS = [
     ("maya-okafor", "Bach Suite no. 1: Prelude", "maya-okafor-2.mp4", "Cello"),
     ("jordan-wells", "All-State etude no. 3", "jordan-wells-1.mp4", "Trumpet"),
     ("jordan-wells", "Arban: Carnival of Venice, first variation", "jordan-wells-2.mp4", "Trumpet"),
+    # Adam's and Sofia's violin clips reuse Aiko's files (no extra media); there is no trombone or guitar footage yet.
+    ("adam-reyes", "Brahms Violin Concerto, mvt. III excerpt", "aiko-nakamura-1.mp4", "Violin"),
+    ("adam-reyes", "Bach Sonata no. 1: Fuga", "aiko-nakamura-2.mp4", "Violin"),
+    ("sofia-lindgren", "Bach Partita no. 3: Gavotte en Rondeau", "aiko-nakamura-2.mp4", "Violin"),
 ]
 
 # author handle, body, attached clip file or None, days ago
@@ -51,37 +82,7 @@ POSTS = [
     ("aiko-nakamura", "Working the Sibelius opening for the spring audition cycle. Any tips on shifting in the first page?", "aiko-nakamura-1.mp4", 6),
     ("maya-okafor", "Sunday practice log: Bach Prelude, three tempos, one very patient neighbour.", "maya-okafor-2.mp4", 4),
     ("jordan-wells", "All-State prep is on. Etude no. 3 finally sits under my fingers. Next up: endurance.", "jordan-wells-1.mp4", 2),
-]
-
-# director handle, title, instruments, description, requirements, timeline, deadline
-AUDITIONS = [
-    ("rhonda-holloway", "Lead Tenor Saxophone: 2027 Season", ["Tenor saxophone"],
-     "The Bayview Jazz Orchestra is seeking a lead tenor for its 2027 season: twelve concerts, a spring tour and a live recording. Paid, one chair.",
-     ["One ballad of your choice", "One up-tempo swing tune", "Sight-reading excerpt, recorded in one take", "Video, no edits, 10 minutes maximum"],
-     [{"label": "Submissions close", "date": "2026-11-24"}, {"label": "Callbacks", "date": "2026-12-10"}, {"label": "Season announced", "date": "2027-01-05"}],
-     "2026-11-24"),
-    ("elena-voss", "Violin: Section Seat, Second Violins", ["Violin"],
-     "Lakeshore Symphony has an opening in the second violin section for the 2027 season, with a path to principal.",
-     ["First movement of a Classical or Romantic concerto (solo or with piano)", "One movement of unaccompanied Bach", "Two orchestral excerpts of your choice"],
-     [{"label": "Submissions close", "date": "2026-11-30"}, {"label": "Live round", "date": "2027-01-15"}],
-     "2026-11-30"),
-    ("priya-raman", "Honors Jazz Combo: Winter Session", ["Trumpet", "Saxophone", "Trombone", "Piano", "Bass", "Drums"],
-     "Two spots for ages 14 to 18 in the honors combo: weekly rehearsals, a coach from the Bay Area scene and a winter showcase.",
-     ["One tune in a style you love", "Scale and arpeggio in a key of your choice", "A short note about why you want to join"],
-     [{"label": "Submissions close", "date": "2026-11-20"}, {"label": "Decisions", "date": "2026-12-05"}, {"label": "First rehearsal", "date": "2027-01-12"}],
-     "2026-11-20"),
-]
-
-# musician handle, audition index, clip file, note, timestamps, days ago, review or None
-# review = (scores, comments, timestamped notes, decision)
-SUBMISSIONS = [
-    ("leo-marquez", 0, "leo-marquez-2.mp4",
-     "Hi Dr. Holloway, the ballad is Body and Soul. Recorded in one take at Eastbridge Studio B. I also double on soprano and clarinet. Thanks for listening!",
-     [{"time": 0, "label": "Body and Soul (ballad)"}, {"time": 178, "label": "Cherokee"}], 0, None),
-    ("dana-brooks", 0, "dana-brooks-1.mp4",
-     "Giant Steps and Cherokee, both straight through. I can read lead sheets and charts at sight.",
-     [{"time": 0, "label": "Giant Steps"}, {"time": 140, "label": "Cherokee"}], 2,
-     ({"tone": 9, "rhythm": 9, "technique": 9, "musicality": 8, "preparation": 9},
-      "Fast, clean and swinging. Sound is a touch bright on the top end, nothing a section could not blend.",
-      [{"time": 95, "text": "Great control through the bridge at this tempo."}], "shortlist")),
+    ("adam-reyes", "Flying out for a live round only after the video round goes well. Anyone else filtering auditions by repertoire fit before booking travel?", None, 1),
+    ("ronald-pierce", "Three M's before I say yes to a gig: Money, Musicians, Music. Two out of three is a maybe. What's your rule?", None, 2),
+    ("alex-chen", "New in town and looking for a funk or jazz group that rehearses on campus. Where does everyone find these?", None, 1),
 ]

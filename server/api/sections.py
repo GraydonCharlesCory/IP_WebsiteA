@@ -2,7 +2,8 @@
 from ..errors import not_found
 from ..validation import CATEGORIES, require_category
 from . import ROUTER
-from .queries import auditions_for_list, clips_list, musicians_list, posts_list
+from .opportunity_queries import opportunities_list
+from .queries import clips_list, musicians_list, posts_list
 from .serializers import SECTION_LABELS
 
 BLURBS = {
@@ -15,7 +16,7 @@ BLURBS = {
 def _counts(conn, category):
     return {
         "musicians": conn.execute("SELECT COUNT(*) FROM users WHERE role='musician' AND category=?", (category,)).fetchone()[0],
-        "auditions": conn.execute("SELECT COUNT(*) FROM auditions WHERE category=? AND status='open'", (category,)).fetchone()[0],
+        "auditions": conn.execute("SELECT COUNT(*) FROM auditions WHERE category=? AND type='audition' AND status='open'", (category,)).fetchone()[0],
     }
 
 
@@ -39,7 +40,7 @@ def section_detail(ctx):
         "posts": posts_list(s, ctx.db, category=category, limit=ctx.query_int("limit", 20)),
         "clips": clips_list(s, ctx.db, category=category, limit=12),
         # Audition postings need a signed-in user; signed-out callers get null.
-        "auditions": auditions_for_list(ctx, category=category) if ctx.user else None,
+        "auditions": opportunities_list(ctx, category=category, type="audition") if ctx.user else None,
     }
 
 

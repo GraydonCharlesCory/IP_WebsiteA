@@ -15,12 +15,27 @@ def brief_user(row) -> dict:
     return {
         "id": row["id"], "role": row["role"], "name": row["name"], "handle": row["handle"],
         "category": row["category"], "instrument": row["instrument"], "ensemble": row["ensemble"],
-        "initials": initials(row["name"]), "avatar_style": row["avatar_style"],
+        "initials": initials(row["name"]), "avatar_style": row["avatar_style"], "is_teacher": bool(row["is_teacher"]),
     }
 
 
 def full_user(row) -> dict:
-    return {**brief_user(row), "bio": row["bio"], "location": row["location"]}
+    return {
+        **brief_user(row), "bio": row["bio"], "location": row["location"],
+        "teaching": {
+            "blurb": row["teacher_blurb"], "instruments": load_list(row["instruments_taught"]), "rate": row["rate_text"],
+        } if row["is_teacher"] else None,
+    }
+
+
+def anonymous_applicant(submission_row, instrument: str) -> dict:
+    """The only description of a musician a director may see while blind review hides their identity."""
+    label = f"Applicant A-{submission_row['id']}"
+    return {
+        "id": None, "role": "musician", "name": label, "label": label, "handle": None, "category": None,
+        "instrument": instrument, "ensemble": "", "initials": "?", "avatar_style": 0, "is_teacher": False,
+        "location": "", "anonymous": True,
+    }
 
 
 def own_user(row) -> dict:
@@ -61,13 +76,27 @@ def post_json(settings, conn, row) -> dict:
     }
 
 
+def opportunity_card(row) -> dict:
+    """The short description of an opportunity (audition or gig) used in lists and on ensemble pages."""
+    place = ", ".join(part for part in (row["city"], row["state"]) if part)
+    return {
+        "id": row["id"], "type": row["type"], "category": row["category"], "title": row["title"],
+        "ensemble": row["ensemble"], "ensemble_id": row["ensemble_id"], "deadline": row["deadline"],
+        "status": row["status"], "city": row["city"], "state": row["state"], "location": place,
+        "level": row["level"], "paid": bool(row["paid"]), "pay": row["pay_text"],
+        "video_round_accepted": bool(row["video_round_accepted"]),
+    }
+
+
 def audition_json(row, director_row) -> dict:
     return {
-        "id": row["id"], "category": row["category"], "title": row["title"], "ensemble": row["ensemble"],
+        **opportunity_card(row),
         "instruments": load_list(row["instruments"]), "description": row["description"],
         "requirements": load_list(row["requirements"]), "timeline": load_list(row["timeline"]),
-        "deadline": row["deadline"], "status": row["status"], "created": row["created"],
-        "director": brief_user(director_row),
+        "created": row["created"], "director": brief_user(director_row),
+        "blind_review": bool(row["blind_review"]),
+        "callback": {"date": row["callback_date"], "location": row["callback_location"]}
+        if row["callback_date"] or row["callback_location"] else None,
     }
 
 
@@ -76,7 +105,19 @@ def review_json(row) -> dict:
         "scores": {name: row[name] for name in REVIEW_CRITERIA},
         "average": row["average"], "comments": row["comments"],
         "notes": load_list(row["notes"]), "decision": row["decision"], "updated": row["updated"],
+        "feedback_shared": bool(row["feedback_shared"]), "feedback_includes_notes": bool(row["feedback_includes_notes"]),
     }
+
+
+def shared_feedback_json(row) -> dict:
+    """What a musician may see of a review once the director shares it (notes only on explicit request)."""
+    data = {
+        "average": row["average"], "scores": {name: row[name] for name in REVIEW_CRITERIA},
+        "comments": row["comments"], "shared_at": row["feedback_shared_at"], "notes": None,
+    }
+    if row["feedback_includes_notes"]:
+        data["notes"] = load_list(row["notes"])
+    return data
 
 
 def dumps(value) -> str:

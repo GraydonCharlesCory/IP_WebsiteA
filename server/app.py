@@ -55,7 +55,7 @@ def make_handler(settings: Settings):
                 if found:
                     raise ApiError(405, f"Use {' or '.join(found)} for this address.")
                 raise ApiError(404, _NOT_FOUND_API)
-            ctx = Context(self, settings, conn, found, query_string)
+            ctx = Context(self, settings, conn, found, query_string, path)
             ctx.user = auth.user_for_token(conn, ctx.session_token)
             self._send_result(func(ctx), ctx)
 

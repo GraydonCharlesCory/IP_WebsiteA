@@ -3,14 +3,15 @@ from datetime import date, timedelta
 
 from ..auth import require_role
 from . import ROUTER
-from .queries import auditions_for_list
+from .opportunity_queries import opportunities_list
 
 
 @ROUTER.route("GET", "/api/director/dashboard")
 def dashboard(ctx):
     director = require_role(ctx, "director", "open the director dashboard")
     conn, me = ctx.db, director["id"]
-    auditions = auditions_for_list(ctx, mine=True)
+    auditions = opportunities_list(ctx, mine=True, type="audition")
+    gigs = opportunities_list(ctx, mine=True, type="gig")
     for item in auditions:
         item.update(_audition_counts(conn, item["id"]))
     open_ones = [a for a in auditions if a["status"] == "open"]
@@ -32,13 +33,14 @@ def dashboard(ctx):
             "average_score": round(average, 1) if average is not None else None,
         },
         "auditions": auditions,
+        "gigs": gigs,
     }
 
 
 def _audition_counts(conn, audition_id):
     row = conn.execute(
         "SELECT COUNT(*) AS total,"
-        " SUM(CASE WHEN s.status='new' THEN 1 ELSE 0 END) AS new_count,"
+        " SUM(CASE WHEN s.status='submitted' THEN 1 ELSE 0 END) AS new_count,"
         " SUM(CASE WHEN s.status='shortlisted' THEN 1 ELSE 0 END) AS shortlisted,"
         " SUM(CASE WHEN r.average IS NOT NULL THEN 1 ELSE 0 END) AS reviewed,"
         " AVG(r.average) AS average FROM submissions s LEFT JOIN reviews r ON r.submission_id=s.id WHERE s.audition_id=?",

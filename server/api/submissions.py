@@ -8,11 +8,10 @@ from ..media import save_upload
 from ..responses import FileResponse, JsonResponse
 from ..validation import optional_text
 from . import ROUTER
-from .lookups import get_audition, owned_audition, owned_submission
+from .lookups import get_audition, is_anonymous, owned_audition, owned_submission
 from .queries import clips_list
-from .serializers import brief_user, clip_url, full_user, review_json
-
-STATUS_FILTERS = ("new", "shortlisted", "passed", "reviewed")
+from .serializers import anonymous_applicant, brief_user, full_user, review_json
+from .statuses import STATUS_LABELS, parse_status
 
 
 def _timestamps(raw) -> list:
@@ -45,7 +44,7 @@ def _create_submission(ctx, audition, musician) -> int:
         source, file_name = "clip", None
     cur = ctx.db.execute(
         "INSERT INTO submissions (audition_id, musician_id, source, file, clip_id, note, timestamps, status, created)"
-        " VALUES (?,?,?,?,?,?,?,'new',?)",
+        " VALUES (?,?,?,?,?,?,?,'submitted',?)",
         (audition["id"], musician["id"], source, file_name, clip_id, note, json.dumps(timestamps), now_iso()),
     )
     ctx.db.commit()
@@ -59,71 +58,78 @@ def submit_to_audition(ctx):
     audition = get_audition(ctx.db, ctx.params["audition_id"])
     if audition["status"] != "open":
         raise ApiError(409, "This audition is closed and no longer takes submissions.")
+    if audition["type"] != "audition":
+        raise ApiError(409, "Gigs take availability, not submissions. Use PUT /api/gigs/<id>/availability.")
     if ctx.db.execute("SELECT 1 FROM submissions WHERE audition_id=? AND musician_id=?", (audition["id"], musician["id"])).fetchone():
         raise ApiError(409, "You have already submitted to this audition.")
     submission_id = _create_submission(ctx, audition, musician)
     created = ctx.db.execute("SELECT created FROM submissions WHERE id=?", (submission_id,)).fetchone()["created"]
-    return JsonResponse({"submission": {"id": submission_id, "audition_id": audition["id"], "status": "Submitted", "created": created}}, 201)
-
-
-@ROUTER.route("GET", "/api/my/submissions")
-def my_submissions(ctx):
-    """Musician's own submissions: status is always 'Submitted'; scores and comments never appear."""
-    musician = require_role(ctx, "musician", "see your submissions")
-    rows = ctx.db.execute(
-        "SELECT s.id, s.audition_id, s.created, a.title, a.ensemble FROM submissions s"
-        " JOIN auditions a ON a.id = s.audition_id WHERE s.musician_id=? ORDER BY s.created DESC", (musician["id"],)
-    ).fetchall()
-    return {"submissions": [{"id": r["id"], "audition_id": r["audition_id"], "audition_title": r["title"],
-                             "ensemble": r["ensemble"], "status": "Submitted", "created": r["created"]} for r in rows]}
+    return JsonResponse({"submission": {"id": submission_id, "audition_id": audition["id"], "status": "submitted", "status_label": "Submitted", "created": created}}, 201)
 
 
 def _review_for(conn, submission_id):
     return conn.execute("SELECT * FROM reviews WHERE submission_id=?", (submission_id,)).fetchone()
 
 
-def submission_summary(ctx, row) -> dict:
-    musician = ctx.db.execute("SELECT * FROM users WHERE id=?", (row["musician_id"],)).fetchone()
+def applicant_json(ctx, submission, audition) -> dict:
+    """The musician as the director may see them: anonymous while blind review hides identity."""
+    musician = ctx.db.execute("SELECT * FROM users WHERE id=?", (submission["musician_id"],)).fetchone()
+    if is_anonymous(audition, submission):
+        return anonymous_applicant(submission, musician["instrument"])
+    return {**brief_user(musician), "location": musician["location"], "anonymous": False}
+
+
+def submission_summary(ctx, row, audition) -> dict:
     review = _review_for(ctx.db, row["id"])
     return {
-        "id": row["id"], "audition_id": row["audition_id"], "musician": {**brief_user(musician), "location": musician["location"]},
-        "source": row["source"], "status": row["status"], "created": row["created"],
-        "average": review["average"] if review else None, "reviewed": bool(review and review["average"] is not None),
+        "id": row["id"], "audition_id": row["audition_id"], "musician": applicant_json(ctx, row, audition),
+        "source": row["source"], "status": row["status"], "status_label": STATUS_LABELS[row["status"]],
+        "created": row["created"], "average": review["average"] if review else None,
+        "reviewed": bool(review and review["average"] is not None),
+        "feedback_shared": bool(review and review["feedback_shared"]),
+        "callback": callback_json(row), "identity_revealed": not is_anonymous(audition, row),
     }
+
+
+def callback_json(row):
+    if row["status"] != "callback":
+        return None
+    return {"date": row["callback_date"], "location": row["callback_location"], "message": row["callback_message"]}
 
 
 @ROUTER.route("GET", "/api/auditions/<audition_id:int>/submissions")
 def list_submissions(ctx):
     audition = owned_audition(ctx, ctx.params["audition_id"])
-    wanted = ctx.query.get("status")
-    if wanted and wanted not in STATUS_FILTERS:
-        raise bad_request(f"Filter by status: {', '.join(STATUS_FILTERS)}.")
+    wanted = parse_status(ctx.query["status"], extra=("reviewed",)) if ctx.query.get("status") else None
     rows = ctx.db.execute("SELECT * FROM submissions WHERE audition_id=? ORDER BY created DESC", (audition["id"],)).fetchall()
-    items = [submission_summary(ctx, r) for r in rows]
+    items = [submission_summary(ctx, r, audition) for r in rows]
     if wanted == "reviewed":
         items = [i for i in items if i["reviewed"]]
     elif wanted:
         items = [i for i in items if i["status"] == wanted]
-    return {"audition": {"id": audition["id"], "title": audition["title"], "ensemble": audition["ensemble"]},
+    return {"audition": {"id": audition["id"], "title": audition["title"], "ensemble": audition["ensemble"],
+                         "blind_review": bool(audition["blind_review"])},
             "submissions": items}
 
 
 @ROUTER.route("GET", "/api/submissions/<submission_id:int>")
 def submission_detail(ctx):
     submission, audition = owned_submission(ctx, ctx.params["submission_id"])
+    anonymous = is_anonymous(audition, submission)
     musician = ctx.db.execute("SELECT * FROM users WHERE id=?", (submission["musician_id"],)).fetchone()
     review = _review_for(ctx.db, submission["id"])
     siblings = [r["id"] for r in ctx.db.execute("SELECT id FROM submissions WHERE audition_id=? ORDER BY created DESC", (audition["id"],))]
     position = siblings.index(submission["id"])
     return {"submission": {
-        **submission_summary(ctx, submission),
+        **submission_summary(ctx, submission, audition),
         "note": submission["note"], "timestamps": load_list(submission["timestamps"]),
         "video_url": f"/api/submissions/{submission['id']}/video",
         "has_video": submission_video_path(ctx, submission) is not None,
-        "musician": full_user(musician),
-        "musician_clips": clips_list(ctx.settings, ctx.db, owner_id=musician["id"]),
+        "musician": applicant_json(ctx, submission, audition) if anonymous else {**full_user(musician), "anonymous": False},
+        "musician_clips": [] if anonymous else clips_list(ctx.settings, ctx.db, owner_id=musician["id"]),
         "review": review_json(review) if review else None,
-        "audition": {"id": audition["id"], "title": audition["title"], "ensemble": audition["ensemble"]},
+        "audition": {"id": audition["id"], "title": audition["title"], "ensemble": audition["ensemble"],
+                     "blind_review": bool(audition["blind_review"])},
         "position": position + 1, "total": len(siblings),
         "previous_id": siblings[position - 1] if position > 0 else None,
         "next_id": siblings[position + 1] if position + 1 < len(siblings) else None,

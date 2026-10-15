@@ -5,18 +5,23 @@ from ..responses import JsonResponse
 from ..validation import require_text
 from . import ROUTER
 from .lookups import get_user
+from .messaging import unread_total
 from .serializers import brief_user, own_user
+
+
+def _own_user_json(ctx, user) -> dict:
+    return {**own_user(user), "unread_messages": unread_total(ctx.db, user["id"])}
 
 
 def _sign_in(ctx, user):
     token = auth.create_session(ctx.db, user["id"])
     ctx.cookie_header = auth.session_cookie(token)
-    return {"user": own_user(user)}
+    return {"user": _own_user_json(ctx, user)}
 
 
 @ROUTER.route("GET", "/api/me")
 def me(ctx):
-    return {"user": own_user(ctx.user) if ctx.user else None}
+    return {"user": _own_user_json(ctx, ctx.user) if ctx.user else None}
 
 
 @ROUTER.route("GET", "/api/accounts")
