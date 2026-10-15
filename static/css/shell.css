@@ -34,3 +34,13 @@
 .clip-card-title{font-weight:600;font-size:15px}
 .spinner{width:20px;height:20px;border:2px solid var(--line);border-top-color:var(--brass);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
+.messages-link{position:relative;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--text-2);border:1px solid transparent}
+.messages-link:hover,.messages-link.on{background:var(--surface);border-color:var(--line);color:var(--text)}
+.badge-count{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--brass);color:var(--brass-ink);font-size:11px;font-weight:700;display:grid;place-items:center;line-height:1}
+.badge-count[hidden]{display:none}
+@media (max-width:1440px){
+  .topbar .wrap{gap:16px}
+  .nav{gap:0}
+  .nav a{padding:8px 9px;gap:6px}
+  .role-pill{display:none}
+}

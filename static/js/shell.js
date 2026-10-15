@@ -4,7 +4,8 @@
    Page recipe:
      <div data-shell-header></div> ...page markup...
      Tutti.boot({ active: 'home', requireRole: 'musician' }).then((user) => { ...render... });
-   `active` is one of: home, students, orchestral, jazz, auditions (musician), dashboard (director). */
+   `active` is one of: home, students, orchestral, jazz, auditions (musician), dashboard (director),
+   discover, applications, teachers, messages. Tutti.setUnreadBadge(n) updates the Messages badge. */
 (function () {
   const { esc, SECTIONS } = Tutti.util;
   const { avatar, dot } = Tutti.components;
@@ -41,10 +42,27 @@
     SECTIONS.forEach((s) => links.push({ href: `section.html?s=${s.key}`, label: s.label, key: s.key, dot: s.key }));
     if (user && user.role === 'musician') links.push({ href: `section.html?s=${user.category}#auditions`, label: 'Auditions', key: 'auditions' });
     if (user && user.role === 'director') links.push({ href: 'director.html', label: 'My auditions', key: 'dashboard' });
+    if (user) links.push({ href: 'discover.html', label: 'Discover', key: 'discover' });
+    if (user && user.role === 'musician') links.push({ href: 'applications.html', label: 'Applications', key: 'applications' });
+    links.push({ href: 'teachers.html', label: 'Teachers', key: 'teachers' });
     return links;
   }
 
   const myPageHref = (user) => (user.role === 'musician' ? `profile.html?h=${encodeURIComponent(user.handle)}` : 'director.html');
+
+  const ICON_MESSAGES = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>';
+
+  /* Show (or hide, when zero) the unread count on the top-bar Messages icon. */
+  function setUnreadBadge(count) {
+    const badge = document.getElementById('messagesBadge');
+    if (!badge) return;
+    badge.textContent = count > 99 ? '99+' : String(count);
+    badge.hidden = !(count > 0);
+  }
+
+  function messagesMarkup(active) {
+    return `<a class="messages-link ${active === 'messages' ? 'on' : ''}" href="messages.html" title="Messages" aria-label="Messages">${ICON_MESSAGES}<span class="badge-count" id="messagesBadge" hidden>0</span></a>`;
+  }
 
   function meMarkup(user) {
     if (!user) return '<a class="btn btn-primary signin-link" href="index.html">Sign in</a>';
@@ -61,7 +79,7 @@
       <a class="logo" href="${user ? landingFor(user) : 'index.html'}"><span class="logo-mark">${LOGO}</span>Tutti</a>
       <nav class="nav">${navLinks(user).map((l) =>
         `<a href="${l.href}" class="${l.key === active ? 'on' : ''}">${l.dot ? dot(l.dot) : ''}${esc(l.label)}</a>`).join('')}</nav>
-      <div class="spacer"></div>${meMarkup(user)}</div>`;
+      <div class="spacer"></div>${user ? messagesMarkup(active) : ''}${meMarkup(user)}</div>`;
   }
 
   /* ---- Account switcher ---- */
@@ -134,7 +152,10 @@
       return new Promise(() => {});
     }
     renderHeader(user, options.active);
-    if (user) wireSwitcher(user);
+    if (user) {
+      setUnreadBadge(user.unread_messages || 0);
+      wireSwitcher(user);
+    }
     const flash = sessionStorage.getItem('tutti-flash');
     if (flash) { sessionStorage.removeItem('tutti-flash'); toast(flash); }
     Tutti.components.wire();
@@ -145,4 +166,5 @@
   Tutti.reportError = reportError;
   Tutti.landingFor = landingFor;
   Tutti.boot = boot;
+  Tutti.setUnreadBadge = setUnreadBadge;
 })();
