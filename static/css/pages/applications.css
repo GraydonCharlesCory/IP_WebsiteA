@@ -1,0 +1,29 @@
+/* My applications: applications.html */
+.app-list{display:grid;gap:20px}
+.app{display:grid;gap:18px}
+.app-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.app-head h3{margin:8px 0 4px;font-size:22px}.app-head h3 a:hover{color:var(--brass-2)}
+.app-head .small a:hover{color:var(--text)}
+.tags{display:flex;gap:8px;flex-wrap:wrap}
+.track{list-style:none;display:flex;gap:0}
+.track li{flex:1;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--muted)}
+.track li:after{content:"";flex:1;height:2px;background:var(--line);margin-right:10px}
+.track li:last-child{flex:none}.track li:last-child:after{display:none}
+.track li.done:after{background:var(--ok)}
+.track li i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;background:var(--surface-2);border:1px solid var(--line);flex:none}
+.track li.done{color:var(--text-2)}.track li.done i{background:rgba(78,210,154,.18);border-color:var(--ok);color:var(--ok)}
+.track li.now{color:var(--text)}.track li.now i{background:var(--brass);border-color:var(--brass);color:var(--brass-ink)}
+.track li.now.no i{background:var(--orch);border-color:var(--orch);color:#fff}
+.note-card{border:1px solid var(--line);border-radius:var(--r);background:var(--bg-2);padding:16px 18px;display:grid;gap:12px}
+.note-card.callback{border-color:rgba(78,210,154,.4)}
+.cb-facts{display:flex;gap:32px;flex-wrap:wrap}
+.cb-facts span{display:block;font-size:12px;color:var(--muted)}
+blockquote{border-left:3px solid var(--brass);padding-left:14px;color:var(--text-2);font-size:14px}
+.fb-head{display:flex;justify-content:space-between;align-items:center}
+.avg{display:flex;align-items:baseline;gap:6px}.avg b{font-family:var(--font-display);font-size:30px;color:var(--brass-2)}.avg span{font-size:12px;color:var(--muted)}
+.scores{display:grid;gap:8px}
+.score{display:grid;grid-template-columns:100px 1fr 28px;gap:12px;align-items:center;font-size:13px;color:var(--text-2)}
+.score b{text-align:right;color:var(--text)}
+.meter{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.meter i{display:block;height:100%;background:var(--brass)}
+.fb-notes{display:grid;gap:8px;font-size:14px;color:var(--text-2)}.fb-notes .tag{margin-right:10px}
+@media (max-width:700px){.track li span{display:none}.track li.now span{display:inline}}

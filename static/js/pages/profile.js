@@ -26,8 +26,9 @@
   }
 
   function sidebar(musician) {
+    const lessons = Tutti.credibility.lessonsCard(musician);
     const details = kvRows([['Instrument', musician.instrument], ['Section', section(musician.category).label], ['Location', musician.location], ['Ensemble', musician.ensemble]]);
-    return `<aside class="side">${card('About', `<p class="t2 small">${esc(musician.bio || 'This musician has not written a bio yet.')}</p>`)}${card('Details', `<div class="kv">${details}</div>`)}</aside>`;
+    return `<aside class="side">${card('About', `<p class="t2 small">${esc(musician.bio || 'This musician has not written a bio yet.')}</p>`)}${card('Details', `<div class="kv">${details}</div>`)}${lessons}</aside>`;
   }
 
   const isOwnProfile = (user, musician) => Boolean(user && user.role === 'musician' && user.handle === musician.handle);
@@ -41,18 +42,29 @@
     }
   }
 
-  function renderMusician({ musician, clips, posts, stats }, user) {
+  async function refreshAfterEndorse(user) {
+    try {
+      renderMusician(await api.musician(handle), user);
+      Tutti.toast('Endorsement posted', 'ok');
+    } catch (error) {
+      Tutti.reportError(error, 'profile refresh after endorsement');
+    }
+  }
+
+  function renderMusician({ musician, clips, posts, stats, badges = [], endorsements = [] }, user) {
     const facts = [musician.instrument, musician.location, musician.ensemble].filter(Boolean).map((f) => `<span>${esc(f)}</span>`).join('');
     document.title = `Tutti — ${musician.name}`;
     document.documentElement.style.setProperty('--acc', `var(--${section(musician.category).css})`);
     content.innerHTML = `<div class="cover"></div><main class="wrap">
-      <div class="idrow">${avatar(musician, 'lg')}<div class="who"><div class="name-row"><h1>${esc(musician.name)}</h1>${categoryTag(musician.category)}</div><div class="facts">${facts}</div></div>
-        ${isOwnProfile(user, musician) ? '<button class="btn btn-primary" id="uploadClipButton" type="button">Upload a clip</button>' : ''}</div>
+      <div class="idrow">${avatar(musician, 'lg')}<div class="who"><div class="name-row"><h1>${esc(musician.name)}</h1>${categoryTag(musician.category)}</div><div class="facts">${facts}</div>${Tutti.credibility.badgeRow(badges)}</div>
+        <div class="actions">${isOwnProfile(user, musician) ? '<button class="btn btn-primary" id="uploadClipButton" type="button">Upload a clip</button>' : Tutti.credibility.viewerActions(user, musician)}</div></div>
       <div class="stats"><div><b>${stats.clips}</b><span>Clips</span></div><div><b>${stats.posts}</b><span>Posts</span></div></div>
-      <div class="layout"><div>${clipsSection(clips)}${postsSection(posts, musician)}</div>${sidebar(musician)}</div></main>`;
+      <div class="layout"><div>${clipsSection(clips)}${postsSection(posts, musician)}${Tutti.credibility.endorsementsSection(endorsements)}</div>${sidebar(musician)}</div></main>`;
     Tutti.components.wire(content);
     const uploadButton = document.getElementById('uploadClipButton');
     if (uploadButton) uploadButton.onclick = () => Tutti.uploadClipDialog.open(() => refreshAfterUpload(user));
+    const endorseButton = document.getElementById('endorseButton');
+    if (endorseButton) endorseButton.onclick = () => Tutti.endorseDialog.open(musician, () => refreshAfterEndorse(user));
   }
 
   /* /api/musicians/<handle> only knows musicians; a director's handle is looked up in the public account list. */

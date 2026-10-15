@@ -38,7 +38,7 @@
       <div class="tags">${categoryTag(audition.category)}${statusTag(audition.status)}${closing}</div>
       <div class="facts">
         <div class="fact"><span>Instrument</span><b>${esc(audition.instruments.join(', ') || 'Open')}</b></div>
-        <div class="fact"><span>Ensemble</span><b>${esc(audition.ensemble)}</b></div>
+        <div class="fact"><span>Ensemble</span><b>${Tutti.auditionRound.ensembleFact(audition)}</b></div>
         <div class="fact"><span>Deadline</span><b>${date(audition.deadline, { month: 'long', day: 'numeric', year: 'numeric' })}</b></div>
       </div></div></section>`;
   }
@@ -51,6 +51,7 @@
       `<div class="${i === firstUpcoming ? 'now' : ''}"><b>${esc(step.label)}</b><span>${date(step.date, { month: 'long', day: 'numeric', year: 'numeric' })}</span></div>`).join('');
     return `<div>
       <div class="sec"><h2>About the chair</h2><p>${esc(audition.description)}</p></div>
+      ${Tutti.auditionRound.roundSection(audition)}
       <div class="sec"><h2>What to submit</h2><p style="margin-bottom:14px">One MP4 clip with everything below.</p><ul class="req">${requirements}</ul></div>
       <div class="sec"><h2>Timeline</h2><div class="timeline">${timeline}</div></div></div>`;
   }
@@ -62,12 +63,7 @@
   }
 
   function musicianCard(audition) {
-    const mine = audition.my_submission;
-    if (mine) {
-      return `<div class="card pad stack"><div style="display:flex;justify-content:space-between;align-items:center">
-          <span class="tag ok">✓ Submitted</span><span class="small muted">${date(mine.created, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span></div>
-        <div><b>Your clip is with ${esc(audition.director.name)}</b><div class="small muted">Under review. Only the director sees scores and comments.</div></div></div>`;
-    }
+    if (audition.my_submission) return Tutti.auditionRound.appliedCard(audition);
     if (audition.status !== 'open') {
       return `<div class="card pad stack"><div class="eyebrow">Closed</div><p class="t2">This audition is closed and no longer takes submissions.</p></div>`;
     }

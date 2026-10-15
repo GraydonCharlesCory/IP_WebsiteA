@@ -1,0 +1,8 @@
+/* Teachers listing: teachers.html */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.filters .chip{cursor:pointer}.filters .chip:hover{border-color:#3d4356}
+.teacher-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;align-items:start}
+.teacher{display:grid;gap:12px;transition:.15s}.teacher:hover{border-color:#3d4356;transform:translateY(-2px)}
+.teacher .who{display:flex;gap:12px;align-items:center}.teacher .who .tag{margin-left:auto}
+.teacher .foot{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}.teacher .foot b{color:var(--text)}
+.teacher-grid .empty{grid-column:1/-1}
