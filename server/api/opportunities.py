@@ -69,7 +69,7 @@ def _fields(data, current: dict, creating: bool) -> dict:
     """Validated audition columns: request values over the current row (or the create defaults)."""
     merged = {**current, **{k: v for k, v in data.items() if k in TEXT_FIELDS or k in FLAGS}}
     kind = merged["type"]
-    if not creating and "type" in data and data["type"] != kind:
+    if not creating and kind != current["type"]:
         raise bad_request("An opportunity's type cannot change after it is posted. Post a new one instead.")
     flags = {name: int(parse_flag(merged.get(name, False), name)) for name in FLAGS}
     if kind == "gig" and flags["blind_review"]:

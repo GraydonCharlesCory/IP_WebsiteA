@@ -6,7 +6,7 @@
   const root = document.getElementById('pageRoot');
   const FILTERS = [
     { key: 'all', label: 'All', test: () => true },
-    { key: 'new', label: 'New', test: (s) => s.status === 'new' },
+    { key: 'new', label: 'New', test: (s) => s.status === 'submitted' },
     { key: 'reviewed', label: 'Reviewed', test: (s) => s.reviewed },
     { key: 'shortlisted', label: 'Shortlist', test: (s) => s.status === 'shortlisted' },
   ];
@@ -36,12 +36,12 @@
 
   function submissionRow(s) {
     const score = s.average === null ? '<span class="muted">—</span>' : `<span class="score">${s.average.toFixed(1)}<small>/10</small></span>`;
-    const label = s.status === 'new' ? 'Review' : 'Open';
-    return `<tr class="${s.status === 'new' ? 'new' : ''}" data-href="review.html?id=${s.id}">
+    const label = s.status === 'submitted' ? 'Review' : 'Open';
+    return `<tr class="${s.status === 'submitted' ? 'new' : ''}" data-href="review.html?id=${s.id}">
       <td><a class="mus" href="review.html?id=${s.id}">${avatar(s.musician)}<div><b>${esc(s.musician.name)}</b>
         <span>${esc(s.musician.instrument)}${s.musician.location ? ` · ${esc(s.musician.location)}` : ''} · ${s.source === 'upload' ? 'Uploaded clip' : 'Profile clip'}</span></div></a></td>
       <td class="hide t2">${timeAgo(s.created)}</td><td>${score}</td><td>${statusTag(s.status)}</td>
-      <td><a class="btn ${s.status === 'new' ? 'btn-primary' : 'btn-ghost'}" style="height:34px" href="review.html?id=${s.id}">${label}</a></td></tr>`;
+      <td><a class="btn ${s.status === 'submitted' ? 'btn-primary' : 'btn-ghost'}" style="height:34px" href="review.html?id=${s.id}">${label}</a></td></tr>`;
   }
 
   function submissionsPanel() {

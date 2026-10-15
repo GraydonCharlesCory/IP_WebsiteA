@@ -17,3 +17,5 @@ Drop an MP4 with the exact file name below into this folder and refresh the page
 | `jordan-wells-2.mp4` | Jordan Wells | Arban: Carnival of Venice, first variation |
 
 `leo-marquez-2.mp4` and `dana-brooks-1.mp4` are also the videos behind the two seeded submissions to the Bayview Jazz Orchestra audition, so the director can play them in the demo.
+
+Adam Reyes and Sofia Lindgren (v2 demo violinists) point their clips at `aiko-nakamura-1.mp4` and `aiko-nakamura-2.mp4`; no extra files are needed. Ronald Pierce (trombone) and Alex Chen (guitar) have no clips yet.

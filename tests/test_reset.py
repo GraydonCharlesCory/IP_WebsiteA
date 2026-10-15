@@ -1,9 +1,11 @@
 """`--reset` wipes only data/ (database and uploads); my-clips/ and demo-uploads/ are never touched."""
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 
 from server.config import Settings
+from server.db import SchemaOutOfDate
 from server.setup import prepare_data
 
 
@@ -27,6 +29,19 @@ class ResetKeepsSampleFoldersTest(unittest.TestCase):
             self.assertTrue(settings.db_path.exists())
             self.assertEqual((clips / "leo-marquez-1.mp4").read_bytes(), b"seed clip")
             self.assertEqual((demo_uploads / "sample-performance.mp4").read_bytes(), b"sample performance")
+
+    def test_a_v1_database_is_refused_with_a_helpful_message(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = Settings(data_dir=Path(tmp) / "data")
+            settings.data_dir.mkdir()
+            conn = sqlite3.connect(str(settings.db_path))
+            conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY)")
+            conn.commit()
+            conn.close()
+            with self.assertRaises(SchemaOutOfDate) as raised:
+                prepare_data(settings)
+            self.assertIn("--reset", str(raised.exception))
+            prepare_data(settings, reset=True)  # the suggested fix works
 
 
 if __name__ == "__main__":

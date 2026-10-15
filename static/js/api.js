@@ -84,7 +84,20 @@
     audition: (id) => get(`/api/auditions/${id}`),
     createAudition: (fields) => request('POST', '/api/auditions', fields),
     editAudition: (id, fields) => request('PUT', `/api/auditions/${id}`, fields),
+    // Opportunities (auditions and gigs), ensembles, teachers
+    opportunities: (params) => get('/api/opportunities', params),
+    opportunity: (id) => get(`/api/opportunities/${id}`),
+    createOpportunity: (fields) => request('POST', '/api/opportunities', fields),
+    editOpportunity: (id, fields) => request('PUT', `/api/opportunities/${id}`, fields),
+    ensembles: (params) => get('/api/ensembles', params),
+    ensemble: (id) => get(`/api/ensembles/${id}`),
+    editEnsemble: (id, fields) => request('PUT', `/api/ensembles/${id}`, fields),
+    teachers: (params) => get('/api/teachers', params),
+    // Gigs
+    markAvailability: (gigId, status) => request('PUT', `/api/gigs/${gigId}/availability`, { status }),
+    subList: (gigId) => get(`/api/gigs/${gigId}/availability`),
     // Submissions
+    myApplications: () => get('/api/my/applications'),
     mySubmissions: () => get('/api/my/submissions'),
     submitClip: (auditionId, { clipId, note, timestamps }) =>
       request('POST', `/api/auditions/${auditionId}/submissions`, { clip_id: clipId, note, timestamps }),
@@ -96,5 +109,17 @@
     submission: (id) => get(`/api/submissions/${id}`),
     submissionVideoUrl: (id) => `/api/submissions/${id}/video`,
     saveReview: (id, review) => request('PUT', `/api/submissions/${id}/review`, review),
+    setSubmissionStatus: (id, fields) => request('PUT', `/api/submissions/${id}/status`, fields),
+    revealApplicant: (id) => request('POST', `/api/submissions/${id}/reveal`),
+    shareFeedback: (id, shared, includeNotes) => request('PUT', `/api/submissions/${id}/feedback`, { shared, include_notes: !!includeNotes }),
+    // Credibility
+    endorse: (handle, text, relationship) => request('POST', `/api/musicians/${encodeURIComponent(handle)}/endorsements`, { text, relationship }),
+    addBadge: (kind, label) => request('POST', '/api/me/badges', { kind, label }),
+    // Messaging
+    conversations: () => get('/api/conversations'),
+    conversation: (id) => get(`/api/conversations/${id}`),
+    startConversation: (fields) => request('POST', '/api/conversations', fields),
+    sendMessage: (id, body) => request('POST', `/api/conversations/${id}/messages`, { body }),
+    markConversationRead: (id) => request('POST', `/api/conversations/${id}/read`),
   };
 })();

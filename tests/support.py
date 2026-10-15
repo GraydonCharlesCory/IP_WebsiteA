@@ -74,3 +74,13 @@ class ServerTestCase(unittest.TestCase):
         if handle:
             client.sign_in(handle)
         return client
+
+
+def find_opportunity(client, title_part, **query):
+    """The first opportunity whose title contains `title_part`, found through the search API."""
+    from urllib.parse import urlencode
+    status, data = client.json("GET", "/api/opportunities?" + urlencode(query))
+    assert status == 200, data
+    matches = [o for o in data["opportunities"] if title_part in o["title"]]
+    assert matches, f"no opportunity titled like {title_part!r}"
+    return matches[0]

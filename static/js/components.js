@@ -18,9 +18,9 @@
     return `<span class="dot ${section(key).css}"></span>`;
   }
 
-  /* Submission status as a tag. Musicians only ever get "Submitted". */
+  /* Submission status as a tag. Keys are the v2 statuses; the v1 names still render. */
   function statusTag(status) {
-    const map = { new: ['brass', 'New'], shortlisted: ['ok', 'Shortlisted'], passed: ['grey', 'Passed'], Submitted: ['ok', 'Submitted'], open: ['ok', 'Open'], closed: ['grey', 'Closed'] };
+    const map = { submitted: ['brass', 'Submitted'], new: ['brass', 'New'], shortlisted: ['ok', 'Shortlisted'], callback: ['ok', 'Callback'], not_selected: ['grey', 'Not selected'], passed: ['grey', 'Passed'], Submitted: ['ok', 'Submitted'], open: ['ok', 'Open'], closed: ['grey', 'Closed'] };
     const [css, label] = map[status] || ['grey', status];
     return `<span class="tag ${css}">${esc(label)}</span>`;
   }
