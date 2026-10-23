@@ -60,13 +60,13 @@ class SubmissionPrivacyTests(ServerTestCase):
         director = self.client("rhonda-holloway")
         status, data = director.json("GET", f"/api/auditions/{audition_id}/submissions")
         self.assertEqual((status, len(data["submissions"])), (200, 2))
-        self.assertEqual(director.request("GET", f"/api/submissions/{submission_id}/video")[0], 200)
+        self.assertEqual(director.request("GET", f"/api/submissions/{submission_id}/audio")[0], 200)
         self.assertEqual(director.json("GET", f"/api/submissions/{submission_id}")[0], 200)
 
     def test_other_director_and_musicians_and_anonymous_are_refused(self):
         audition_id, submission_id = self._submission_id()
         paths = [f"/api/auditions/{audition_id}/submissions", f"/api/submissions/{submission_id}",
-                 f"/api/submissions/{submission_id}/video"]
+                 f"/api/submissions/{submission_id}/audio"]
         for who, expected in (("elena-voss", 403), ("leo-marquez", 403), (None, 401)):
             client = self.client(who)
             for path in paths:

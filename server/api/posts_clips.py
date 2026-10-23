@@ -1,6 +1,7 @@
 """Creating posts and profile clips (musicians only); reading clips (public)."""
 from ..auth import require_role
 from ..db import now_iso
+from ..durations import mp4_duration
 from ..errors import bad_request
 from ..media import save_upload
 from ..responses import JsonResponse
@@ -25,8 +26,9 @@ def upload_profile_clip(ctx):
     title = require_text(ctx.query, "title", "a clip title", 120)
     name = save_upload(ctx, ctx.settings.profile_uploads_dir)
     cur = ctx.db.execute(
-        "INSERT INTO clips (owner_id, title, file, source, category, instrument, created) VALUES (?,?,?,?,?,?,?)",
-        (user["id"], title, name, "upload", user["category"], ctx.query.get("instrument") or user["instrument"], now_iso()),
+        "INSERT INTO clips (owner_id, title, file, source, category, instrument, duration_sec, created) VALUES (?,?,?,?,?,?,?,?)",
+        (user["id"], title, name, "upload", user["category"], ctx.query.get("instrument") or user["instrument"],
+         mp4_duration(ctx.settings.profile_uploads_dir / name), now_iso()),
     )
     ctx.db.commit()
     row = ctx.db.execute("SELECT * FROM clips WHERE id=?", (cur.lastrowid,)).fetchone()

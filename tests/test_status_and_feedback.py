@@ -9,9 +9,8 @@ class StatusAndFeedbackTests(ServerTestCase):
     def setUp(self):
         self.rhonda = self.client("rhonda-holloway")
         self.audition = find_opportunity(self.rhonda, "Lead Tenor")
-        subs = self.rhonda.json("GET", f"/api/auditions/{self.audition['id']}/submissions")[1]["submissions"]
-        self.leo = [s for s in subs if s["musician"]["handle"] == "leo-marquez"][0]["id"]
-        self.dana = [s for s in subs if s["musician"]["handle"] == "dana-brooks"][0]["id"]
+        self.leo = self.submission_id_of("leo-marquez", self.audition["id"])
+        self.dana = self.submission_id_of("dana-brooks", self.audition["id"])
 
     def _application(self, handle, audition_id):
         apps = self.client(handle).json("GET", "/api/my/applications")[1]["applications"]
@@ -26,7 +25,14 @@ class StatusAndFeedbackTests(ServerTestCase):
         self.assertEqual(self.rhonda.json("GET", f"/api/submissions/{self.dana}")[1]["submission"]["status_label"] in
                          ("Shortlisted", "Callback", "Not selected"), True)
 
+    def test_callback_needs_the_submission_to_be_scored_first(self):
+        status, data = self.rhonda.json("PUT", f"/api/submissions/{self.leo}/status", {"status": "callback", "message": "Come in."})
+        self.assertEqual(status, 400)
+        self.assertIn("Score this submission", data["error"])
+        self.assertEqual(self._application("leo-marquez", self.audition["id"])["status"], "submitted")
+
     def test_callback_with_message_reaches_the_musician(self):
+        self.rhonda.json("PUT", f"/api/submissions/{self.leo}/review", {"scores": SCORES})
         body = {"status": "callback", "callback_date": "2026-12-11", "callback_location": "Studio A", "message": "Bring your mute kit."}
         status, data = self.rhonda.json("PUT", f"/api/submissions/{self.leo}/status", body)
         self.assertEqual((status, data["submission"]["status"], data["submission"]["callback"]["message"]), (200, "callback", "Bring your mute kit."))
@@ -46,6 +52,7 @@ class StatusAndFeedbackTests(ServerTestCase):
         jordan = self.client("jordan-wells")
         _, created = jordan.json("POST", f"/api/auditions/{honors['id']}/submissions", {"clip_id": jordan.json("GET", "/api/musicians/jordan-wells")[1]["clips"][0]["id"]})
         sid = created["submission"]["id"]
+        priya.json("PUT", f"/api/submissions/{sid}/review", {"scores": SCORES})
         self.assertEqual(priya.json("PUT", f"/api/submissions/{sid}/status", {"status": "callback"})[0], 400)
         self.assertEqual(priya.json("PUT", f"/api/submissions/{sid}/status", {"status": "winner"})[0], 400)
         self.assertEqual(priya.json("PUT", f"/api/submissions/{sid}/status", {"status": "callback", "callback_date": "tomorrow"})[0], 400)

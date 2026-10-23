@@ -4,13 +4,14 @@ from . import seed_data as data
 from .auth import hash_password
 from .config import log
 from .db import days_ago, now_iso
+from .durations import mp4_duration
 from .seed_opportunities import seed_opportunities
 from .seed_social import seed_social
 
 
-def seed(conn) -> None:
+def seed(conn, clips_dir) -> None:
     ids, categories = _insert_users(conn)
-    clip_ids = _insert_clips(conn, ids, categories)
+    clip_ids = _insert_clips(conn, ids, categories, clips_dir)
     for handle, body, clip_file, days in data.POSTS:
         conn.execute(
             "INSERT INTO posts (author_id, category, body, clip_id, created) VALUES (?,?,?,?,?)",
@@ -38,13 +39,13 @@ def _insert_users(conn):
     return ids, categories
 
 
-def _insert_clips(conn, ids, categories) -> dict:
+def _insert_clips(conn, ids, categories, clips_dir) -> dict:
     """Clip ids keyed by (owner handle, file name): several owners may point at one media file."""
     clip_ids = {}
     for index, (handle, title, file_name, instrument) in enumerate(data.CLIPS):
         cur = conn.execute(
-            "INSERT INTO clips (owner_id, title, file, source, category, instrument, created) VALUES (?,?,?,'library',?,?,?)",
-            (ids[handle], title, file_name, categories[handle], instrument, days_ago(20 - index)),
+            "INSERT INTO clips (owner_id, title, file, source, category, instrument, duration_sec, created) VALUES (?,?,?,'library',?,?,?,?)",
+            (ids[handle], title, file_name, categories[handle], instrument, mp4_duration(clips_dir / file_name), days_ago(20 - index)),
         )
         clip_ids[(handle, file_name)] = cur.lastrowid
     return clip_ids

@@ -7,8 +7,7 @@ class ReviewTests(ServerTestCase):
     def setUp(self):
         self.director = self.client("rhonda-holloway")
         audition_id = self.director.json("GET", "/api/auditions?mine=1")[1]["auditions"][0]["id"]
-        subs = self.director.json("GET", f"/api/auditions/{audition_id}/submissions")[1]["submissions"]
-        self.leo_submission = [s for s in subs if s["musician"]["handle"] == "leo-marquez"][0]["id"]
+        self.leo_submission = self.submission_id_of("leo-marquez", audition_id)
 
     def _save(self, body):
         return self.director.json("PUT", f"/api/submissions/{self.leo_submission}/review", body)

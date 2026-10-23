@@ -107,10 +107,8 @@
     dashboard: () => get('/api/director/dashboard'),
     auditionSubmissions: (auditionId, status) => get(`/api/auditions/${auditionId}/submissions`, { status }),
     submission: (id) => get(`/api/submissions/${id}`),
-    submissionVideoUrl: (id) => `/api/submissions/${id}/video`,
     saveReview: (id, review) => request('PUT', `/api/submissions/${id}/review`, review),
     setSubmissionStatus: (id, fields) => request('PUT', `/api/submissions/${id}/status`, fields),
-    revealApplicant: (id) => request('POST', `/api/submissions/${id}/reveal`),
     shareFeedback: (id, shared, includeNotes) => request('PUT', `/api/submissions/${id}/feedback`, { shared, include_notes: !!includeNotes }),
     // Credibility
     endorse: (handle, text, relationship) => request('POST', `/api/musicians/${encodeURIComponent(handle)}/endorsements`, { text, relationship }),

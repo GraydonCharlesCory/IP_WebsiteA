@@ -13,7 +13,7 @@ OPPORTUNITIES = [
          requirements=["First movement of a Classical or Romantic concerto (solo or with piano)", "One movement of unaccompanied Bach", "Two orchestral excerpts of your choice"],
          timeline=[("Submissions close", "2026-11-30"), ("Live round", "2027-01-15")],
          deadline="2026-11-30", level="pro", paid=True, pay="Per-service rate under the AFM agreement",
-         video_round=True, callback=("2027-01-15", "Orchard Hall, Chicago, IL"), blind=True),
+         video_round=True, callback=("2027-01-15", "Orchard Hall, Chicago, IL")),
     dict(director="priya-raman", title="Honors Jazz Combo: Winter Session", instruments=["Trumpet", "Saxophone", "Trombone", "Piano", "Bass", "Drums"],
          description="Two spots for ages 14 to 18 in the honors combo: weekly rehearsals, a coach from the Bay Area scene and a winter showcase.",
          requirements=["One tune in a style you love", "Scale and arpeggio in a key of your choice", "A short note about why you want to join"],
@@ -64,31 +64,31 @@ OPPORTUNITIES = [
 
 REVIEW_ADAM = ({"tone": 9, "rhythm": 8, "technique": 9, "musicality": 9, "preparation": 8},
                "Warm, centred tone and a convincing Brahms line. Two small intonation drifts in the high positions; otherwise ready for the section.",
-               [{"time": 45, "text": "Private: slightly sharp shift in bar 12, check with the concertmaster."}], "shortlist")
+               [{"time": 34, "text": "Private: slightly sharp shift in bar 12, check with the concertmaster."}], "shortlist")
 REVIEW_SOFIA = ({"tone": 7, "rhythm": 7, "technique": 6, "musicality": 8, "preparation": 7},
                 "Lovely phrasing. Intonation in the high positions drifted and the excerpts felt under-prepared for this seat.",
-                [{"time": 60, "text": "Private: rushes the sixteenths after the cadenza."}], "pass")
+                [{"time": 42, "text": "Private: rushes the sixteenths after the cadenza."}], "pass")
 REVIEW_DANA = ({"tone": 9, "rhythm": 9, "technique": 9, "musicality": 8, "preparation": 9},
                "Fast, clean and swinging. Sound is a touch bright on the top end, nothing a section could not blend.",
-               [{"time": 95, "text": "Great control through the bridge at this tempo."}], "shortlist")
+               [{"time": 31, "text": "Great control through the bridge at this tempo."}], "shortlist")
 
 # musician, opportunity index, clip owner + file, note, timestamps, days ago, review, status override, callback, share feedback
 SUBMISSIONS = [
     dict(musician="leo-marquez", audition=0, clip="leo-marquez-2.mp4",
          note="Hi Dr. Holloway, the ballad is Body and Soul. Recorded in one take at Eastbridge Studio B. I also double on soprano and clarinet. Thanks for listening!",
-         timestamps=[{"time": 0, "label": "Body and Soul (ballad)"}, {"time": 178, "label": "Cherokee"}], days=0),
+         timestamps=[{"time": 0, "label": "Body and Soul (ballad)"}, {"time": 28, "label": "Cherokee"}], days=0),
     dict(musician="dana-brooks", audition=0, clip="dana-brooks-1.mp4",
          note="Giant Steps and Cherokee, both straight through. I can read lead sheets and charts at sight.",
-         timestamps=[{"time": 0, "label": "Giant Steps"}, {"time": 140, "label": "Cherokee"}], days=2, review=REVIEW_DANA),
-    # Blind-review audition: the director sees these three as anonymous applicants.
+         timestamps=[{"time": 0, "label": "Giant Steps"}, {"time": 22, "label": "Cherokee"}], days=2, review=REVIEW_DANA),
+    # Lakeshore audition: the director sees these applicants as anonymous until scored and moved to callback.
     dict(musician="adam-reyes", audition=1, clip="aiko-nakamura-1.mp4",
          note="Brahms third movement excerpt and the Bach fugue, recorded in one take with no edits. I am available to travel for the live round.",
-         timestamps=[{"time": 0, "label": "Brahms, mvt. III"}, {"time": 150, "label": "Bach, Fuga"}], days=4, review=REVIEW_ADAM,
+         timestamps=[{"time": 0, "label": "Brahms, mvt. III"}, {"time": 24, "label": "Bach, Fuga"}], days=4, review=REVIEW_ADAM,
          status="callback", share_feedback=True,
          callback=("2027-01-15", "Orchard Hall, Chicago, IL", "Congratulations! We would like to hear you live. Bring the Brahms and two excerpts; the panel will sit behind a screen.")),
     dict(musician="sofia-lindgren", audition=1, clip="aiko-nakamura-2.mp4",
          note="Bach Gavotte and a Mozart concerto excerpt, one take each.",
-         timestamps=[{"time": 0, "label": "Bach"}, {"time": 95, "label": "Mozart"}], days=5, review=REVIEW_SOFIA),
+         timestamps=[{"time": 0, "label": "Bach"}, {"time": 38, "label": "Mozart"}], days=5, review=REVIEW_SOFIA),
 ]
 
 # gig index -> musician handle -> availability

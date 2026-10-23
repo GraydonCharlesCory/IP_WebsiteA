@@ -2,6 +2,7 @@
 import json
 
 from ..db import now_iso
+from ..durations import require_within
 from ..errors import bad_request
 from . import ROUTER
 from .lookups import owned_submission
@@ -18,9 +19,10 @@ def _score(value, name):
     return value
 
 
-def _notes(items):
+def _notes(items, duration=None):
     try:
-        return [{"time": int(i["time"]), "text": str(i["text"]).strip()[:1000]} for i in items if str(i["text"]).strip()]
+        return [{"time": require_within(int(i["time"]), duration, "A note"), "text": str(i["text"]).strip()[:1000]}
+                for i in items if str(i["text"]).strip()]
     except (ValueError, TypeError, KeyError):
         raise bad_request("Notes must be a list like [{\"time\": 134, \"text\": \"Beautiful release\"}] with times in seconds.")
 
@@ -48,7 +50,7 @@ def save_review(ctx):
         raise bad_request(f"Scores must use these criteria: {', '.join(REVIEW_CRITERIA)}.")
     scores = {name: _score(incoming[name], name) if name in incoming else current["scores"][name] for name in REVIEW_CRITERIA}
     comments = str(data["comments"]).strip()[:5000] if "comments" in data else current["comments"]
-    notes = _notes(data["notes"]) if "notes" in data else current["notes"]
+    notes = _notes(data["notes"], submission["duration_sec"]) if "notes" in data else current["notes"]
     decision = data["decision"] if "decision" in data else current["decision"]
     if decision not in (None, "shortlist", "pass"):
         raise bad_request("The decision must be 'shortlist', 'pass' or null.")

@@ -16,6 +16,6 @@ def prepare_data(settings: Settings, reset: bool = False) -> None:
     conn = db.connect(settings.db_path)
     try:
         if db.is_empty(conn):
-            seed(conn)
+            seed(conn, settings.clips_dir)
     finally:
         conn.close()

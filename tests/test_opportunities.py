@@ -78,19 +78,22 @@ class OpportunityWriteTests(ServerTestCase):
         self.assertEqual(marcus.json("POST", "/api/opportunities", {**body, "gig": {"date": "2026-12-12", "venue": "X", "music": {"rating": 9}}})[0], 400)
         self.assertEqual(marcus.json("POST", "/api/opportunities", {**body, "deadline": "soon"})[0], 400)
         self.assertEqual(marcus.json("PUT", f"/api/opportunities/{gig['id']}", {"type": "audition"})[0], 400)
-        self.assertEqual(marcus.json("PUT", f"/api/opportunities/{gig['id']}", {"blind_review": True})[0], 400)
         self.assertEqual(self.client("elena-voss").json("PUT", f"/api/opportunities/{gig['id']}", {"title": "x"})[0], 403)
         self.assertEqual(self.client("alex-chen").json("POST", "/api/opportunities", body)[0], 403)
 
-    def test_audition_defaults_and_blind_toggle(self):
+    def test_audition_defaults_and_blind_review_cannot_be_set(self):
         elena = self.client("elena-voss")
         status, data = elena.json("POST", "/api/auditions", {"title": "Viola", "deadline": "2026-12-20", "video_round_accepted": True})
         self.assertEqual(status, 201)
         audition = data["audition"]
-        self.assertEqual((audition["type"], audition["blind_review"], audition["city"]), ("audition", False, "Chicago"))
-        status, data = elena.json("PUT", f"/api/auditions/{audition['id']}", {"blind_review": True, "callback_date": "2027-02-01", "callback_location": "Hall"})
-        self.assertEqual((status, data["audition"]["blind_review"], data["audition"]["callback"]["location"]), (200, True, "Hall"))
-        self.assertEqual(self.client("leo-marquez").json("GET", f"/api/auditions/{audition['id']}")[1]["audition"]["blind_review"], True)
+        self.assertEqual((audition["type"], audition["city"], "blind_review" in audition), ("audition", "Chicago", False))
+        status, data = elena.json("PUT", f"/api/auditions/{audition['id']}", {"callback_date": "2027-02-01", "callback_location": "Hall"})
+        self.assertEqual((status, data["audition"]["callback"]["location"]), (200, "Hall"))
+        for value in (False, True):
+            status, data = elena.json("PUT", f"/api/auditions/{audition['id']}", {"blind_review": value})
+            self.assertEqual(status, 400)
+            self.assertIn("always on", data["error"])
+        self.assertEqual(elena.json("POST", "/api/auditions", {"title": "Cello", "deadline": "2026-12-20", "blind_review": False})[0], 400)
 
 
 class EnsembleTests(ServerTestCase):

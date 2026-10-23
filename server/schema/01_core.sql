@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS clips (
   source TEXT NOT NULL CHECK (source IN ('library','upload')),
   category TEXT NOT NULL,
   instrument TEXT NOT NULL DEFAULT '',
+  duration_sec REAL,
   created TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS posts (

@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS auditions (
   video_round_accepted INTEGER NOT NULL DEFAULT 0,
   callback_date TEXT NOT NULL DEFAULT '',
   callback_location TEXT NOT NULL DEFAULT '',
-  blind_review INTEGER NOT NULL DEFAULT 0,
   created TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS gig_details (
@@ -69,7 +68,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   callback_date TEXT NOT NULL DEFAULT '',
   callback_location TEXT NOT NULL DEFAULT '',
   callback_message TEXT NOT NULL DEFAULT '',
-  identity_revealed INTEGER NOT NULL DEFAULT 0,
+  duration_sec REAL,
   created TEXT NOT NULL,
   UNIQUE (audition_id, musician_id)
 );

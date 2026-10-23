@@ -29,7 +29,7 @@ def full_user(row) -> dict:
 
 
 def anonymous_applicant(submission_row, instrument: str) -> dict:
-    """The only description of a musician a director may see while blind review hides their identity."""
+    """The only description of a musician a director may see until the submission is scored and moved to callback."""
     label = f"Applicant A-{submission_row['id']}"
     return {
         "id": None, "role": "musician", "name": label, "label": label, "handle": None, "category": None,
@@ -94,7 +94,6 @@ def audition_json(row, director_row) -> dict:
         "instruments": load_list(row["instruments"]), "description": row["description"],
         "requirements": load_list(row["requirements"]), "timeline": load_list(row["timeline"]),
         "created": row["created"], "director": brief_user(director_row),
-        "blind_review": bool(row["blind_review"]),
         "callback": {"date": row["callback_date"], "location": row["callback_location"]}
         if row["callback_date"] or row["callback_location"] else None,
     }

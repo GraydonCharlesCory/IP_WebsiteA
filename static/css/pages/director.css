@@ -28,5 +28,4 @@
 @media (max-width:1000px){.layout{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.tbl .hide{display:none}}
 .round-bar{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--bg-2)}
 .round p{font-size:14px;margin-top:4px}
-.round-bar .switch{max-width:420px}
 a.aitem.gig:hover{border-color:#3d4356}

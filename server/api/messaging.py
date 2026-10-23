@@ -37,7 +37,7 @@ def _hidden_from_director(ctx, submission_id: int) -> bool:
     """True when the viewer is the audition's director and the submission is still anonymous."""
     submission = ctx.db.execute("SELECT * FROM submissions WHERE id=?", (submission_id,)).fetchone()
     audition = ctx.db.execute("SELECT * FROM auditions WHERE id=?", (submission["audition_id"],)).fetchone()
-    return audition["director_id"] == ctx.user["id"] and is_anonymous(audition, submission)
+    return audition["director_id"] == ctx.user["id"] and is_anonymous(ctx.db, submission)
 
 
 def _conversation_json(ctx, row) -> dict:
@@ -50,7 +50,7 @@ def _conversation_json(ctx, row) -> dict:
     audition = ctx.db.execute("SELECT id, title FROM auditions WHERE id=?", (row["audition_id"],)).fetchone() if row["audition_id"] else None
     submission_id = row["submission_id"]
     if submission_id and _hidden_from_director(ctx, submission_id):
-        audition, submission_id = None, None  # a link made before blind review was switched on must not unmask the applicant
+        audition, submission_id = None, None  # a link made while the applicant was still anonymous must not unmask them
     return {
         "id": row["id"], "other": brief_user(other),
         "context": {"opportunity": dict(audition) if audition else None, "submission_id": submission_id},
@@ -87,9 +87,9 @@ def _context_ids(ctx, data) -> tuple:
         me = ctx.user["id"]
         if not submission or me not in (submission["musician_id"], audition["director_id"]):
             raise forbidden("You can only link a conversation to your own submission or one sent to your audition.")
-        if is_anonymous(audition, submission):
+        if is_anonymous(ctx.db, submission):
             log.info("Refused linking a conversation to blind submission %s for user %s", submission["id"], me)
-            raise forbidden("This submission is under blind review, so it cannot be linked to a conversation until the director reveals the applicant.")
+            raise forbidden("This submission is under blind review, so it cannot be linked to a conversation until you have scored it and moved it to callback.")
         audition_id = audition_id or audition["id"]
     return audition_id, submission_id
 

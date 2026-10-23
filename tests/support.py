@@ -69,6 +69,11 @@ class ServerTestCase(unittest.TestCase):
         cls.server.server_close()
         cls._tmp.cleanup()
 
+    def submission_id_of(self, handle, audition_id):
+        """The musician's own submission id (a director only sees anonymous applicants, so ask the musician)."""
+        applications = self.client(handle).json("GET", "/api/my/applications")[1]["applications"]
+        return [a for a in applications if a["audition_id"] == audition_id][0]["id"]
+
     def client(self, handle=None):
         client = Client(self.port)
         if handle:

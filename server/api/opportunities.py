@@ -13,7 +13,7 @@ from .lookups import get_audition
 from .opportunity_queries import LEVELS, TYPES, opportunities_list, opportunity_json, parse_filters
 from .serializers import dumps
 
-FLAGS = ("paid", "video_round_accepted", "blind_review")
+FLAGS = ("paid", "video_round_accepted")
 TEXT_FIELDS = ("type", "title", "ensemble", "description", "deadline", "category", "status", "city", "state", "level",
                "pay_text", "callback_date", "callback_location")
 
@@ -67,13 +67,13 @@ def _create_defaults(conn, director) -> dict:
 
 def _fields(data, current: dict, creating: bool) -> dict:
     """Validated audition columns: request values over the current row (or the create defaults)."""
+    if "blind_review" in data:
+        raise bad_request("Blind review is always on for auditions and cannot be changed. Remove 'blind_review' from the request.")
     merged = {**current, **{k: v for k, v in data.items() if k in TEXT_FIELDS or k in FLAGS}}
     kind = merged["type"]
     if not creating and kind != current["type"]:
         raise bad_request("An opportunity's type cannot change after it is posted. Post a new one instead.")
     flags = {name: int(parse_flag(merged.get(name, False), name)) for name in FLAGS}
-    if kind == "gig" and flags["blind_review"]:
-        raise bad_request("Blind review only applies to auditions.")
     return {
         "title": require_text(merged, "title", "a title", 160),
         "ensemble": require_text(merged, "ensemble", "the ensemble name", 160),
@@ -98,7 +98,7 @@ def _fields(data, current: dict, creating: bool) -> dict:
 @ROUTER.route("POST", "/api/auditions")
 def create_opportunity(ctx):
     """Director: {title, deadline, type?: audition|gig, gig?: {...}, level?, paid?, pay_text?, city?, state?,
-    video_round_accepted?, callback_date?, callback_location?, blind_review?, category?, ensemble?, description?,
+    video_round_accepted?, callback_date?, callback_location?, category?, ensemble?, description?,
     instruments[], requirements[], timeline[{label,date}], status?}."""
     director = require_role(ctx, "director", "post auditions and gigs")
     data = ctx.json()
@@ -117,7 +117,7 @@ def create_opportunity(ctx):
 @ROUTER.route("PUT", "/api/opportunities/<audition_id:int>")
 @ROUTER.route("PUT", "/api/auditions/<audition_id:int>")
 def edit_opportunity(ctx):
-    """Owner: any of the create fields; `blind_review` switches blind review on or off."""
+    """Owner: any of the create fields (blind review is always on and cannot be set)."""
     director = require_role(ctx, "director", "edit auditions and gigs")
     row = get_audition(ctx.db, ctx.params["audition_id"])
     if row["director_id"] != director["id"]:

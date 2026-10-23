@@ -37,12 +37,12 @@ def _insert_opportunity(conn, ids, ensemble_ids, row) -> int:
     cur = conn.execute(
         "INSERT INTO auditions (director_id, ensemble_id, type, category, title, ensemble, instruments, description, requirements,"
         " timeline, deadline, status, city, state, level, paid, pay_text, video_round_accepted, callback_date, callback_location,"
-        " blind_review, created) VALUES (?,?,?,?,?,?,?,?,?,?,?,'open',?,?,?,?,?,?,?,?,?,?)",
+        " created) VALUES (?,?,?,?,?,?,?,?,?,?,?,'open',?,?,?,?,?,?,?,?,?)",
         (ids[row["director"]], ensemble["id"], row.get("type", "audition"), ensemble["category"], row["title"], ensemble["name"],
          json.dumps(row["instruments"]), row["description"], json.dumps(row.get("requirements", [])),
          json.dumps([{"label": label, "date": date} for label, date in row.get("timeline", [])]), row["deadline"],
          ensemble["city"], ensemble["state"], row["level"], int(row["paid"]), row["pay"], int(row.get("video_round", False)),
-         callback_date, callback_location, int(row.get("blind", False)), days_ago(10)),
+         callback_date, callback_location, days_ago(10)),
     )
     if "gig" in row:
         _insert_gig(conn, cur.lastrowid, row["gig"])
@@ -62,11 +62,13 @@ def _insert_submission(conn, ids, clip_ids, opportunity_ids, row) -> None:
     review = row.get("review")
     status = row.get("status") or (DECISION_TO_STATUS[review[3]] if review else "submitted")
     callback_date, callback_place, callback_message = row.get("callback", ("", "", ""))
+    clip_id = clip_ids[(row["musician"], row["clip"])]
     cur = conn.execute(
         "INSERT INTO submissions (audition_id, musician_id, source, clip_id, note, timestamps, status, callback_date,"
-        " callback_location, callback_message, created) VALUES (?,?,'clip',?,?,?,?,?,?,?,?)",
-        (opportunity_ids[row["audition"]], ids[row["musician"]], clip_ids[(row["musician"], row["clip"])], row["note"],
-         json.dumps(row["timestamps"]), status, callback_date, callback_place, callback_message, days_ago(row["days"])),
+        " callback_location, callback_message, duration_sec, created) VALUES (?,?,'clip',?,?,?,?,?,?,?,"
+        "(SELECT duration_sec FROM clips WHERE id=?),?)",
+        (opportunity_ids[row["audition"]], ids[row["musician"]], clip_id, row["note"],
+         json.dumps(row["timestamps"]), status, callback_date, callback_place, callback_message, clip_id, days_ago(row["days"])),
     )
     if review:
         scores, comments, notes, decision = review

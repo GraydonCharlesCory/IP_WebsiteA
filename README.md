@@ -1,6 +1,6 @@
 # Tutti: "Hudl for musicians" (investor demo)
 
-Musicians post clips, find auditions and gigs on one board, and apply; directors find players, run blind or open reviews, move people to callback and share feedback. Musicians and directors can message each other.
+Musicians post clips, find auditions and gigs on one board, and apply; directors find players, run blind reviews, move people to callback and share feedback. Musicians and directors can message each other.
 Local, offline-friendly demo: Python 3.9 standard library only, SQLite, plain HTML/CSS/JS. No pip, no npm, no build step.
 
 ## Run it
@@ -18,7 +18,7 @@ python3 -m unittest discover -s tests
 
 1. **Opportunity board**: auditions and gigs in one searchable list (`/api/opportunities`), plus public ensemble pages (`/api/ensembles`).
 2. **Video pre-screen**: an audition can accept video and carry callback date/place; the director moves a submission to `callback` with a message.
-3. **Blind review**: per-audition switch; while on, the director's APIs return an anonymous "Applicant A-n" (enforced on the server).
+3. **Blind review (always on)**: directors listen to audio only (no video picture, thumbnail or photo) and see an anonymous "Applicant A-n" until they have scored a submission and moved it to callback. There is no switch to turn it off.
 4. **Application status and feedback**: `submitted → shortlisted → callback → not_selected`; the musician sees status and, only when the director shares it, scores and comments (`/api/my/applications`).
 5. **Credibility**: verified badges (union, school, ensemble) and endorsements from directors and teachers.
 6. **Jazz gigs and sub lists**: gigs with date, venue, pay and the 3 M's (Money, Musicians, Music); musicians mark availability; the posting director sees the sub list.
@@ -51,10 +51,10 @@ The sign-in page has "Sign in as musician" / "Sign in as director" one-click but
 
 1. Sign in as a musician (Jordan Wells, say), open an audition (Honors Jazz Combo), submit a clip (pick an MP4 from `demo-uploads/` in the file picker, or choose a profile clip). Optionally open your own profile and use "Upload a clip" the same way.
 2. Open the account switcher and switch to that audition's director (Priya Raman).
-3. Open "My auditions", then the new submission: play the video, score the five criteria, add comments and timestamped notes, shortlist or pass.
+3. Open "My auditions", then the new submission: listen (audio only, applicant anonymous), score the five criteria, add comments and timestamped notes, shortlist or pass; moving a scored submission to callback reveals who it is.
 4. Switch to another director or back to the musician: they cannot see the submission's scores, comments or video (the musician only sees "Submitted").
 
-Dr. Holloway's audition already has two submissions (Leo: new; Dana: scored and shortlisted), so the dashboard is not empty.
+Dr. Holloway's audition already has two submissions (Leo: new; Dana: scored and shortlisted; both appear as "Applicant A-n"), so the dashboard is not empty.
 
 ### What each v2 account shows
 
@@ -62,7 +62,7 @@ Dr. Holloway's audition already has two submissions (Leo: new; Dana: scored and 
 |---|---|---|
 | Discovery | Alex Chen | `GET /api/opportunities` lists 6 auditions and 5 gigs; filter by `location=Denver`, `paid=0`, `level=college`, `video_round=1`. Six ensemble pages are public. |
 | Video pre-screen + callback | Leo Marquez / Dr. Holloway | Lead Tenor audition accepts video and has callback 2026-12-10 at Bayview Hall. Dr. Holloway can set Leo to `callback`. |
-| Blind review | Elena Voss | The Lakeshore violin audition is blind: two submissions appear as "Applicant A-n"; `POST /api/submissions/<id>/reveal` unmasks one. |
+| Blind review | Elena Voss | The Lakeshore violin audition: Sofia appears as "Applicant A-n" (scored, not selected); Adam is shown by name because he was scored and moved to callback. Playback is audio only (`GET /api/submissions/<id>/audio`). |
 | Callback + shared feedback | Adam Reyes | `my/applications`: Lakeshore application at `callback` with a message, plus shared scores (average 8.6) and comments; his private timestamped note is not shared. |
 | Not selected, feedback private | Sofia Lindgren | Application `not_selected`, `feedback: null` (Elena has scored but not shared). |
 | Shortlisted, unshared | Dana Brooks | v1 scenario: shortlisted with a score the director has not shared. |
@@ -85,9 +85,10 @@ Seed profile clips point at fixed file names in `my-clips/` (full list in `my-cl
 
 - Anyone, even signed out: musician profiles (with badges and endorsements), profile clips, posts, section feeds, the teacher list, **ensemble list and pages** (including a short card for each of the ensemble's open opportunities; full details need sign-in).
 - Signed in: the opportunity board and opportunity details (auditions and gigs). This keeps v1's rule; only ensemble pages are public for credibility. Only musicians submit and mark availability; only directors post/edit opportunities (their own).
-- Only the director who posted an audition may list its submissions, play submission videos, read or write scores and comments, change status, reveal a blind applicant and share feedback. Anyone else gets 403 (401 if signed out). Submission videos are only served by `GET /api/submissions/<id>/video`, never from a public path.
+- Only the director who posted an audition may list its submissions, play submission audio, read or write scores and comments, change status and share feedback. Anyone else gets 403 (401 if signed out). Submission media is only served by `GET /api/submissions/<id>/audio`, never from a public path. There are no thumbnail, poster or still-frame routes.
 - **Musicians see** their own application status and callback details. They see scores and comments **only after the director shares feedback** for that submission, and the director's private timestamped notes only if the director also chose `include_notes`. Everything else about the review stays private.
-- **Blind review**: while an audition has `blind_review` on and a submission's identity has not been revealed, every director-facing API (list, detail, video) returns the applicant as `{name: "Applicant A-<submission id>", label, handle: null, id: null, anonymous: true, initials: "?", avatar_style: 0, location: ""}` plus the instrument, and `musician_clips: []`. The label is stable. Identity is revealed **only** when the director calls `POST /api/submissions/<id>/reveal` (that submission only) or turns blind review off (everyone). Shortlisting, callbacks, rejection and scoring do **not** reveal. While anonymous, nobody can link a conversation to that submission (403), and a link made earlier is hidden from the director (`context` is null). Limit: the applicant's free-text note and the video itself are shown as submitted, so applicants should not put their name in them.
+- **Blind review is always on** (no flag, setting or request parameter can change it; a request carrying `blind_review` gets 400). Every director-facing API (list, detail, audio) returns the applicant as `{name: "Applicant A-<submission id>", label, handle: null, id: null, anonymous: true, initials: "?", avatar_style: 0, location: ""}` plus the instrument, and the submission detail never includes the applicant's profile clips. The label is stable. **Reveal rule:** identity becomes visible to the director only once that submission has been **scored** (an average exists) **and** moved to `callback` (`PUT .../status`, which is refused with 400 until the submission is scored). There is no reveal endpoint; moving the status away from `callback` hides the applicant again. Shortlisting, passing and scoring never reveal. Even after the reveal the director's playback is audio only. While anonymous, nobody can link a conversation to that submission (403), and a link made earlier is hidden from the director (`context` is null). Limit: the applicant's free-text note is shown as submitted, so applicants should not put their name in it, and the audio route streams the submitted MP4 file (the browser plays only its audio; the server cannot strip the video track without extra tools).
+- **Times stay inside the clip**: each clip's real length is read from its MP4 header when it is seeded or uploaded (`clips.duration_sec`, `submissions.duration_sec`). Chapter times at submit and review notes must lie within `0..duration` (400 otherwise, naming the clip length); the review player hides anything outside the clip. If a length cannot be read (missing or unreadable file) only negative times are refused.
 - Conversations: only the two participants can read, write or mark read; anyone else gets 403 (401 signed out).
 - Sub lists: only the director who posted the gig sees who marked availability; a musician sees only their own mark.
 - Endorsements: only directors and teachers (musicians with `is_teacher`) can write them, never for themselves. Self-claimed badges are never "verified by Tutti".
@@ -98,9 +99,9 @@ Seed profile clips point at fixed file names in `my-clips/` (full list in `my-cl
 `sessions` · `clips` (owner, title, file, source library|upload, category, instrument; several clips may point at one media file) ·
 `posts` (author, category, body, optional clip) ·
 **`ensembles`** (director, name, category, city, state, about, founded, season, highlights[], roster[{name,instrument}], logo_initials, logo_color) ·
-`auditions` (holds auditions **and gigs**: director, ensemble_id, **type audition|gig**, category, title, ensemble name, instruments[], description, requirements[], timeline[{label,date}], deadline YYYY-MM-DD, status open|closed, **city, state, level student|college|semi-pro|pro, paid, pay_text, video_round_accepted, callback_date, callback_location, blind_review**) ·
+`auditions` (holds auditions **and gigs**: director, ensemble_id, **type audition|gig**, category, title, ensemble name, instruments[], description, requirements[], timeline[{label,date}], deadline YYYY-MM-DD, status open|closed, **city, state, level student|college|semi-pro|pro, paid, pay_text, video_round_accepted, callback_date, callback_location**) ·
 **`gig_details`** (gig, gig_date, start_time, venue, money/musicians/music rating 1-5 + note) · **`gig_availability`** (gig, musician, available|maybe|unavailable) ·
-`submissions` (audition, musician, source upload|clip, file / clip, note, timestamps[{time,label}], **status submitted|shortlisted|callback|not_selected, callback_date, callback_location, callback_message, identity_revealed**; one per musician per audition) ·
+`submissions` (audition, musician, source upload|clip, file / clip, note, timestamps[{time,label}], duration_sec, **status submitted|shortlisted|callback|not_selected, callback_date, callback_location, callback_message, identity_revealed**; one per musician per audition) ·
 `reviews` (submission, tone, rhythm, technique, musicality, preparation each 1-10, average, comments, notes[{time,text}], decision shortlist|pass, **feedback_shared, feedback_includes_notes, feedback_shared_at**) ·
 **`badges`** (user, kind union|school|ensemble, label, verified_by_tutti) · **`endorsements`** (musician, author, relationship, text) ·
 **`conversations`** (one per pair of users; optional linked audition/gig and submission) · **`messages`** (conversation, sender, body, read_at).
@@ -116,7 +117,7 @@ JSON under `/api/`. Errors are always `{"error": "plain-language message"}` with
 Brief user object: `{id, role, name, handle, category, instrument, ensemble, initials, avatar_style, is_teacher}`. Full adds `bio, location, teaching: {blurb, instruments[], rate}|null`; `/api/me` and sign-in add `email` and `unread_messages` (top-bar badge).
 Clip: `{id, title, category, instrument, created, video_url, available, owner?}`. Post: `{id, category, body, created, author, clip|null}`.
 Opportunity card (lists, ensemble pages): `{id, type: "audition"|"gig", category, title, ensemble, ensemble_id, deadline, status, city, state, location: "Denver, CO", level, paid, pay, video_round_accepted}`.
-Opportunity (a card plus): `{instruments[], description, requirements[], timeline[], created, director, blind_review, callback: {date, location}|null, ensemble_info: {id, name, category, city, state, location, logo_initials, logo_color}|null, gig: {date, start_time, venue, three_ms: {money|musicians|music: {rating 1-5|null, note}}}|null}` plus, for musicians, `my_submission: {id, status, status_label, created}|null` (auditions) or `my_availability: "available"|"maybe"|"unavailable"|null` (gigs); for the owner `owned_by_me: true` and `submission_count` (auditions) or `available_count` (gigs).
+Opportunity (a card plus): `{instruments[], description, requirements[], timeline[], created, director, callback: {date, location}|null, ensemble_info: {id, name, category, city, state, location, logo_initials, logo_color}|null, gig: {date, start_time, venue, three_ms: {money|musicians|music: {rating 1-5|null, note}}}|null}` plus, for musicians, `my_submission: {id, status, status_label, created}|null` (auditions) or `my_availability: "available"|"maybe"|"unavailable"|null` (gigs); for the owner `owned_by_me: true` and `submission_count` (auditions) or `available_count` (gigs).
 `GET/POST/PUT /api/auditions…` (v1 addresses) answer `{audition}`/`{auditions}`; the same functions at `/api/opportunities…` answer `{opportunity}`/`{opportunities}`. `/api/auditions` lists auditions only.
 Statuses are keys `submitted | shortlisted | callback | not_selected` with a `status_label` ("Submitted", "Shortlisted", "Callback", "Not selected").
 Error responses to expect: 400 for bad filters or bodies, with the allowed values in the message.
@@ -150,7 +151,6 @@ Error responses to expect: 400 for bad filters or bodies, with the allowed value
 | GET `/api/gigs/<id>/availability` | owner (gig's director) | | the sub list: `{gig:{id,title}, available[], maybe[], unavailable[]}` of users with `location` and `marked` |
 | GET `/api/my/applications` | musician | | `{applications:[{id,audition_id,created,status,status_label,opportunity:card,ensemble:{id,name,...},callback:{date,location,message}\|null,feedback:{average,scores,comments,shared_at,notes:null\|[{time,text}]}\|null}]}` newest first |
 | PUT `/api/submissions/<id>/status` | owner | `{status: "submitted"\|"shortlisted"\|"callback"\|"not_selected", callback_date?, callback_location?, message?}`; `callback` needs a date, place or message (the audition's callback date/place fill in gaps); other statuses clear callback details | `{submission}` (same as detail) |
-| POST `/api/submissions/<id>/reveal` | owner | | `{submission}` with identity (blind mode only matters; harmless otherwise) |
 | PUT `/api/submissions/<id>/feedback` | owner | `{shared: true\|false, include_notes?: true\|false}`; sharing needs a score or a comment (400 otherwise) | `{submission}` |
 | POST `/api/musicians/<handle>/endorsements` | director or teacher | `{text, relationship?}` (not for yourself) | 201 `{endorsement:{id,text,relationship,created,author}}` |
 | POST `/api/me/badges` | musician | `{kind: "union"\|"school"\|"ensemble", label}` (always unverified) | 201 `{badge:{id,kind,label,verified_by_tutti}}`; 409 duplicate label |
@@ -161,14 +161,14 @@ Error responses to expect: 400 for bad filters or bodies, with the allowed value
 | POST `/api/conversations/<id>/read` | participants | | `{ok:true, unread_total}` (marks the other person's messages read) |
 | GET `/api/auditions` | user | same filters as `/api/opportunities`, always `type=audition` | `{auditions[]}` |
 | GET `/api/auditions/<id>` | user | | `{audition}` (works for gigs too) |
-| POST `/api/auditions` | director | `{title, deadline, category?, ensemble?, description?, instruments[], requirements[], timeline[{label,date}], status?, level?, paid?, pay_text?, city?, state?, video_round_accepted?, callback_date?, callback_location?, blind_review?}`; category, ensemble name, city and state default from the director's ensemble; `level` defaults to `pro`; `deadline`/`callback_date` are YYYY-MM-DD | 201 `{audition}` |
-| PUT `/api/auditions/<id>` | owner | same fields, all optional; `blind_review` switches blind mode on/off (off reveals everyone); `type` cannot change | `{audition}` |
+| POST `/api/auditions` | director | `{title, deadline, category?, ensemble?, description?, instruments[], requirements[], timeline[{label,date}], status?, level?, paid?, pay_text?, city?, state?, video_round_accepted?, callback_date?, callback_location??}`; category, ensemble name, city and state default from the director's ensemble; `level` defaults to `pro`; `deadline`/`callback_date` are YYYY-MM-DD | 201 `{audition}` |
+| PUT `/api/auditions/<id>` | owner | same fields, all optional; `blind_review` is refused (400): blind review is always on; `type` cannot change | `{audition}` |
 | POST `/api/auditions/<id>/submissions` | musician | JSON `{clip_id, note?, timestamps?[{time,label}]}` **or** raw MP4 body with `?note=&timestamps=<url-encoded JSON>` | 201 `{submission:{id,audition_id,status:"submitted",status_label,created}}`; 409 if closed, a gig, or already submitted |
 | GET `/api/my/submissions` | musician | | v1 list: `{submissions:[{id,audition_id,audition_title,ensemble,status,status_label,created}]}` (never scores or comments) |
 | GET `/api/director/dashboard` | director | | `{director, kpis:{open_auditions,closing_this_week,total_submissions,new_submissions (= submitted),awaiting_review,reviewed,average_score}, auditions[], gigs[]}`; each audition adds `submission_count,new_count,shortlisted_count,reviewed_count,average_score` |
-| GET `/api/auditions/<id>/submissions` | owner | `?status=submitted\|shortlisted\|callback\|not_selected\|reviewed` (v1 `new`/`passed` accepted) | `{audition:{id,title,ensemble,blind_review}, submissions:[{id,audition_id,musician,source,status,status_label,created,average,reviewed,feedback_shared,callback,identity_revealed}]}`; `musician` is anonymous while blind |
-| GET `/api/submissions/<id>` | owner | | `{submission:{...summary, note, timestamps[], video_url, has_video, musician, musician_clips[], review|null, audition, position, total, previous_id, next_id}}`; `review` also has `feedback_shared, feedback_includes_notes`; anonymous while blind (`musician_clips` empty) |
-| GET `/api/submissions/<id>/video` | owner | optional `Range` header | MP4 stream (200/206) |
+| GET `/api/auditions/<id>/submissions` | owner | `?status=submitted\|shortlisted\|callback\|not_selected\|reviewed` (v1 `new`/`passed` accepted) | `{audition:{id,title,ensemble}, submissions:[{id,audition_id,musician,source,status,status_label,created,average,reviewed,feedback_shared,callback,identity_revealed}]}`; `musician` is anonymous while blind |
+| GET `/api/submissions/<id>` | owner | | `{submission:{...summary, note, timestamps[], audio_url, has_audio, duration, musician, review|null, audition, position, total, previous_id, next_id}}`; `review` also has `feedback_shared, feedback_includes_notes`; anonymous while blind (`musician_clips` empty) |
+| GET `/api/submissions/<id>/audio` | owner | optional `Range` header | the recording for an `<audio>` element (200/206) |
 | PUT `/api/submissions/<id>/review` | owner | `{scores?:{tone,rhythm,technique,musicality,preparation}, comments?, notes?[{time,text}], decision?: "shortlist"\|"pass"\|null}`; only sent fields change (safe for auto-save) | `{review:{scores,average,comments,notes,decision,updated}, status}`; `average` = mean of the scores given, 1 decimal |
 | GET `/media/clips/<file>` | public | optional `Range` | seed clip from `my-clips/` (206 supported; 404 "coming soon" if missing) |
 | GET `/media/uploads/<file>` | public | optional `Range` | an uploaded profile clip |

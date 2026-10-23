@@ -12,8 +12,8 @@
     const header = Tutti.reviewHeader;
     return `<div class="wrap page">${header.markup(sub)}
       <div class="layout"><section id="playerRoot">
-        <div class="player-tile"></div><div class="marker-strip" aria-label="Chapters and notes on the video timeline"></div><div class="chapter-list"></div>
-        ${header.applicantRow(sub)}${header.applicantNoteAndClips(sub)}
+        <div class="player-tile"></div><div class="marker-strip" aria-label="Chapters and notes on the recording timeline"></div><div class="chapter-list"></div>
+        ${header.applicantRow(sub)}${header.applicantNote(sub)}
       </section>
       <aside class="card panel">
         <div class="ph"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Your evaluation</h3>${privateNote('Private to you')}</div></div>
@@ -25,17 +25,6 @@
         <div class="saved" id="saved" role="status"></div>
         <div class="fb" id="feedbackRoot"></div>
       </aside></div></div>`;
-  }
-
-  async function revealIdentity(sub) {
-    const confirmed = await Tutti.confirmDialog({
-      title: 'Reveal this applicant?', body: 'You will see their name, photo and public clips. Other applicants stay anonymous, and this cannot be undone.', confirmLabel: 'Reveal identity',
-    });
-    if (!confirmed) return;
-    try {
-      start((await api.revealApplicant(sub.id)).submission);
-      Tutti.toast('Identity revealed.', 'ok');
-    } catch (error) { Tutti.reportError(error, 'reveal identity'); }
   }
 
   function start(sub) {
@@ -60,6 +49,7 @@
 
     const notesUi = Tutti.reviewNotes.mount(document.getElementById('notesRoot'), review.notes, {
       getTime: () => (player ? player.currentTime() : 0),
+      getDuration: () => (player ? player.duration() : sub.duration || 0),
       seek: (seconds) => player && player.seek(seconds),
       onChange: async (notes) => {
         currentNotes.splice(0, currentNotes.length, ...notes);
@@ -68,14 +58,14 @@
         await save({ notes }, '✓ Note saved');
       },
     });
-    player = Tutti.reviewPlayer.mount(document.getElementById('playerRoot'), sub, { badge: statusTag(sub.status), getNotes: () => currentNotes, onTime: () => notesUi.followVideo() });
+    player = Tutti.reviewPlayer.mount(document.getElementById('playerRoot'), sub, { badge: statusTag(sub.status), getNotes: () => currentNotes, onTime: () => notesUi.followAudio() });
 
     const saveBeforeAction = async (fields) => { clearTimeout(timer); return save(fields); };
     Tutti.reviewDecision.mount(document.getElementById('decisionRoot'), {
       submission: sub,
       getFields: () => { clearTimeout(timer); return getFields(); },
       save,
-      onStatus: (status) => { document.querySelector('.video .badge').innerHTML = statusTag(status); },
+      onStatus: (status) => { document.querySelector('.audio-badge').innerHTML = statusTag(status); },
     });
     feedbackUi = Tutti.reviewFeedback.mount(document.getElementById('feedbackRoot'), {
       submission: sub,
@@ -83,8 +73,6 @@
       ensureSaved: async () => Boolean(await saveBeforeAction(getFields())),
     });
     if (sub.review) document.getElementById('saved').className = 'saved';
-    const reveal = document.getElementById('revealButton');
-    if (reveal) reveal.onclick = () => revealIdentity(sub);
   }
 
   async function load() {

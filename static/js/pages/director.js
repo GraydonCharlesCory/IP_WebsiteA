@@ -77,18 +77,7 @@
     wirePanel();
   }
 
-  /* Persists the switch, then reloads the table: turning blind review off reveals every applicant. */
-  async function setBlindReview(auditionId, enabled) {
-    const { audition } = await api.editAudition(auditionId, { blind_review: enabled });
-    Object.assign(state.dashboard.auditions.find((a) => a.id === auditionId), audition);
-    state.submissions = (await api.auditionSubmissions(auditionId)).submissions;
-    refreshPanel();
-    Tutti.toast(enabled ? 'Blind review is on: names and photos are hidden.' : 'Blind review is off: applicants are visible.', 'ok');
-  }
-
   function wirePanel() {
-    const audition = state.dashboard.auditions.find((a) => a.id === state.auditionId);
-    if (audition) directorRound.wireSwitch(root, audition, setBlindReview);
     root.querySelectorAll('[data-filter]').forEach((chip) => {
       chip.onclick = () => { state.filter = chip.dataset.filter; refreshPanel(); };
     });

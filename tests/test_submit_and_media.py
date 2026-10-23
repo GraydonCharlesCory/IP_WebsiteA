@@ -18,9 +18,9 @@ class SubmitTests(ServerTestCase):
         self.assertEqual(jordan.json("POST", f"/api/auditions/{audition_id}/submissions", {"clip_id": 1})[0], 409)
         detail = priya.json("GET", f"/api/submissions/{submission_id}")[1]["submission"]
         self.assertEqual((detail["note"], detail["timestamps"]), ("Hello", [{"time": 5, "label": "Etude"}]))
-        status, body, response = priya.request("GET", f"/api/submissions/{submission_id}/video")
+        status, body, response = priya.request("GET", f"/api/submissions/{submission_id}/audio")
         self.assertEqual((status, body), (200, FAKE_MP4))
-        self.assertEqual(self.client("elena-voss").request("GET", f"/api/submissions/{submission_id}/video")[0], 403)
+        self.assertEqual(self.client("elena-voss").request("GET", f"/api/submissions/{submission_id}/audio")[0], 403)
 
     def test_upload_rejects_non_mp4_empty_and_oversize(self):
         maya = self.client("maya-okafor")
@@ -91,5 +91,5 @@ class RangeTests(ServerTestCase):
         director = self.client("rhonda-holloway")
         audition_id = director.json("GET", "/api/auditions?mine=1")[1]["auditions"][0]["id"]
         sid = director.json("GET", f"/api/auditions/{audition_id}/submissions")[1]["submissions"][0]["id"]
-        status, body, _ = director.request("GET", f"/api/submissions/{sid}/video", headers={"Range": "bytes=0-3"})
+        status, body, _ = director.request("GET", f"/api/submissions/{sid}/audio", headers={"Range": "bytes=0-3"})
         self.assertEqual(status, 206)
