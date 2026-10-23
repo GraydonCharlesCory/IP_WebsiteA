@@ -36,8 +36,8 @@ def mp4_duration(path: Path):
                     timescale, units = struct.unpack(fmt, data[offset:offset + struct.calcsize(fmt)])
                     return units / timescale if timescale else None
         log.warning("No duration found in %s (no moov/mvhd box)", path)
-    except (OSError, struct.error) as error:
-        log.warning("Could not read the duration of %s: %s", path, error)
+    except (OSError, struct.error, IndexError) as error:
+        log.warning("Could not read the duration of %s (missing or truncated MP4 header): %s. Its length is treated as unknown.", path, error)
     return None
 
 

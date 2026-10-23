@@ -53,6 +53,14 @@ class ProbeTests(unittest.TestCase):
             self.assertIsNone(mp4_duration(bad))
             self.assertIsNone(mp4_duration(Path(tmp) / "missing.mp4"))
 
+    def test_truncated_header_is_unknown_not_an_error(self):
+        full = mp4_with_duration(42)
+        with tempfile.TemporaryDirectory() as tmp:
+            for cut in (len(full) - 100, len(full) - 95, len(full) - 88):  # cut at the start of the mvhd payload, inside its fields
+                path = Path(tmp) / f"cut{cut}.mp4"
+                path.write_bytes(full[:cut])
+                self.assertIsNone(mp4_duration(path), cut)
+
     def test_require_within(self):
         self.assertEqual(require_within(40, 40.05, "A note"), 40)
         self.assertEqual(require_within(500, None, "A note"), 500)  # length unknown: only the start is checked
