@@ -39,14 +39,25 @@ def _participant_conversation(ctx, conversation_id: int):
     return row
 
 
+def _other_id(ctx, row) -> int:
+    return row["user_high"] if row["user_low"] == ctx.user["id"] else row["user_low"]
+
+
 def _other_party(ctx, row) -> dict:
     """The person on the other side as the viewer may see them: a director only ever sees a musician as an anonymous applicant."""
-    other = get_user(ctx.db, row["user_high"] if row["user_low"] == ctx.user["id"] else row["user_low"])
+    other = get_user(ctx.db, _other_id(ctx, row))
     if not (_is_director(ctx) and other["role"] == "musician"):
         return brief_user(other)
-    if row["submission_id"]:
-        return anonymous_applicant(row["submission_id"], other["instrument"])
     return anonymous_applicant(row["id"], other["instrument"], prefix="C")
+
+
+def _context_json(ctx, row) -> dict:
+    """The audition/submission a conversation was linked to. A director never gets it for a musician: it would tie a
+    named musician (found by user id) to an audition, so the link is withheld from every response, not just some."""
+    if _is_director(ctx) and get_user(ctx.db, _other_id(ctx, row))["role"] == "musician":
+        return {"opportunity": None, "submission_id": None}
+    audition = ctx.db.execute("SELECT id, title FROM auditions WHERE id=?", (row["audition_id"],)).fetchone() if row["audition_id"] else None
+    return {"opportunity": dict(audition) if audition else None, "submission_id": row["submission_id"]}
 
 
 def _conversation_json(ctx, row) -> dict:
@@ -55,10 +66,9 @@ def _conversation_json(ctx, row) -> dict:
     unread = ctx.db.execute(
         "SELECT COUNT(*) FROM messages WHERE conversation_id=? AND sender_id!=? AND read_at IS NULL", (row["id"], me)
     ).fetchone()[0]
-    audition = ctx.db.execute("SELECT id, title FROM auditions WHERE id=?", (row["audition_id"],)).fetchone() if row["audition_id"] else None
     return {
         "id": row["id"], "other": _other_party(ctx, row),
-        "context": {"opportunity": dict(audition) if audition else None, "submission_id": row["submission_id"]},
+        "context": _context_json(ctx, row),
         "last_message": _message_json(ctx, last) if last else None, "unread_count": unread,
         "updated": last["created"] if last else row["created"],
     }

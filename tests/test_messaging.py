@@ -77,5 +77,5 @@ class MessagingTests(ServerTestCase):
         self.assertEqual(self.client("elena-voss").json("POST", "/api/conversations", {"user_id": leo_id, "submission_id": sub["id"]})[0], 403)
         rhonda.json("PUT", f"/api/submissions/{sub['id']}/status", {"status": "callback"})  # Dana is already scored
         status, data = rhonda.json("POST", "/api/conversations", {"submission_id": sub["id"], "body": "Callback details soon."})
-        self.assertEqual((status, data["conversation"]["context"]["submission_id"]), (201, sub["id"]))
+        self.assertEqual(status, 201)  # the director's own view carries no link to the musician
         self.assertEqual(data["conversation"]["other"]["id"], None)  # the director never gets the musician's id
