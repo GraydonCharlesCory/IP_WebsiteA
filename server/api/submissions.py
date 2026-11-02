@@ -9,8 +9,8 @@ from ..media import save_upload
 from ..responses import FileResponse, JsonResponse
 from ..validation import optional_text
 from . import ROUTER
-from .lookups import get_audition, is_anonymous, owned_audition, owned_submission
-from .serializers import anonymous_applicant, brief_user, full_user, review_json
+from .lookups import get_audition, owned_audition, owned_submission
+from .serializers import anonymous_applicant, review_json
 from .statuses import STATUS_LABELS, parse_status
 
 
@@ -84,11 +84,9 @@ def _review_for(conn, submission_id):
 
 
 def applicant_json(ctx, submission) -> dict:
-    """The musician as the director may see them: anonymous until the submission is scored and moved to callback."""
-    musician = ctx.db.execute("SELECT * FROM users WHERE id=?", (submission["musician_id"],)).fetchone()
-    if is_anonymous(ctx.db, submission):
-        return anonymous_applicant(submission, musician["instrument"])
-    return {**brief_user(musician), "location": musician["location"], "anonymous": False}
+    """The musician as the director sees them: always anonymous, in every status, with no way to change that."""
+    musician = ctx.db.execute("SELECT instrument FROM users WHERE id=?", (submission["musician_id"],)).fetchone()
+    return anonymous_applicant(submission["id"], musician["instrument"])
 
 
 def submission_summary(ctx, row, audition) -> dict:
@@ -99,7 +97,7 @@ def submission_summary(ctx, row, audition) -> dict:
         "created": row["created"], "average": review["average"] if review else None,
         "reviewed": bool(review and review["average"] is not None),
         "feedback_shared": bool(review and review["feedback_shared"]),
-        "callback": callback_json(row), "identity_revealed": not is_anonymous(ctx.db, row),
+        "callback": callback_json(row),
     }
 
 
@@ -126,8 +124,6 @@ def list_submissions(ctx):
 @ROUTER.route("GET", "/api/submissions/<submission_id:int>")
 def submission_detail(ctx):
     submission, audition = owned_submission(ctx, ctx.params["submission_id"])
-    anonymous = is_anonymous(ctx.db, submission)
-    musician = ctx.db.execute("SELECT * FROM users WHERE id=?", (submission["musician_id"],)).fetchone()
     review = _review_for(ctx.db, submission["id"])
     siblings = [r["id"] for r in ctx.db.execute("SELECT id FROM submissions WHERE audition_id=? ORDER BY created DESC", (audition["id"],))]
     position = siblings.index(submission["id"])
@@ -137,7 +133,6 @@ def submission_detail(ctx):
         "audio_url": f"/api/submissions/{submission['id']}/audio",
         "has_audio": submission_media_path(ctx, submission) is not None,
         "duration": submission["duration_sec"],
-        "musician": applicant_json(ctx, submission) if anonymous else {**full_user(musician), "anonymous": False},
         "review": review_json(review) if review else None,
         "audition": {"id": audition["id"], "title": audition["title"], "ensemble": audition["ensemble"]},
         "position": position + 1, "total": len(siblings),

@@ -28,7 +28,7 @@ ENDORSEMENTS = [
 # (person, person, optional opportunity index, [(sender, text, hours ago, read)])
 CONVERSATIONS = [
     ("naomi-castellanos", "adam-reyes", 3, [
-        ("naomi-castellanos", "Hi Adam, I saw your profile and your AFM status. We are building our sub list for violin and would love you to apply.", 30, True),
+        ("naomi-castellanos", "Hi, I saw your profile and your AFM status. We are building our sub list for violin and would love you to apply.", 30, True),
         ("naomi-castellanos", "Our live auditions are January 10 in Denver. Happy to answer questions about the repertoire.", 3, False),
     ]),
     ("ronald-pierce", "marcus-bell", 6, [
@@ -40,6 +40,6 @@ CONVERSATIONS = [
         ("ronald-pierce", "I mostly teach brass, but I run improvisation clinics for any instrument. Come to the next one, and check the Front Range jazz ensemble auditions in January.", 4, False),
     ]),
     ("rhonda-holloway", "leo-marquez", 0, [
-        ("rhonda-holloway", "Thanks for submitting, Leo. We are watching videos through the week and will be in touch.", 12, False),
+        ("rhonda-holloway", "Thanks for submitting. We are watching videos through the week and will be in touch.", 12, False),
     ]),
 ]

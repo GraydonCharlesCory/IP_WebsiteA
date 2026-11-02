@@ -10,7 +10,7 @@
   }
 
   function mount(container, { submission, getFields, save, onStatus }) {
-    const first = submission.musician.anonymous ? 'The applicant' : submission.musician.name.split(' ')[0];
+    const first = 'The applicant';
     let current = { status: submission.status, callback: submission.callback };
 
     function draw() {

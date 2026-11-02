@@ -14,7 +14,7 @@ def set_status(ctx):
 
     `callback` needs a date, a place or a message (the audition's callback date/location fill in what you leave out);
     moving to any other status clears the callback details. The submission must be scored before it can move to
-    `callback`; that scored callback is the only thing that reveals the applicant's identity to the director.
+    `callback`. The applicant stays anonymous to the director in every status.
     """
     submission, audition = owned_submission(ctx, ctx.params["submission_id"])
     data = ctx.json()
@@ -22,7 +22,7 @@ def set_status(ctx):
     date_text = place = message = ""
     if status == "callback":
         if not is_scored(ctx.db, submission):
-            raise bad_request("Score this submission before moving it to callback: scoring is blind, and the callback is what reveals the applicant.")
+            raise bad_request("Score this submission before moving it to callback.")
         date_text = data.get("callback_date") or audition["callback_date"]
         place = optional_text(data, "callback_location") or audition["callback_location"]
         message = optional_text(data, "message", 1000)

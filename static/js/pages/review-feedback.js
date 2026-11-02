@@ -19,7 +19,7 @@
     const state = { shared: !!initial.feedback_shared, includeNotes: !!initial.feedback_includes_notes };
 
     function draw() {
-      const first = esc(submission.musician.anonymous ? 'the applicant' : submission.musician.name.split(' ')[0]);
+      const first = 'the applicant';
       container.innerHTML = `<div class="fb-head"><div class="eyebrow">Share feedback with applicant</div>
           ${state.shared ? '<span class="tag ok">✓ Shared</span>' : '<span class="tag grey">Not shared</span>'}</div>
         <p class="small muted">${state.shared ? `${first} can see this now. Changes you make here are not shown to them until you share again.` : `Nothing below is visible to ${first} until you share it.`}</p>

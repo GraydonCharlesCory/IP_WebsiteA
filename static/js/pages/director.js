@@ -42,7 +42,7 @@
     const label = s.status === 'submitted' ? 'Review' : 'Open';
     return `<tr class="${s.status === 'submitted' ? 'new' : ''}" data-href="review.html?id=${s.id}">
       <td><a class="mus" href="review.html?id=${s.id}">${applicantAvatar(s.musician)}<div><b>${esc(s.musician.name)}</b>
-        <span>${s.musician.anonymous ? 'Identity hidden · ' : ''}${esc(s.musician.instrument)}${s.musician.location ? ` · ${esc(s.musician.location)}` : ''} · ${s.source === 'upload' ? 'Uploaded clip' : 'Profile clip'}</span></div></a></td>
+        <span>Identity hidden · ${esc(s.musician.instrument)} · ${s.source === 'upload' ? 'Uploaded clip' : 'Profile clip'}</span></div></a></td>
       <td class="hide t2">${timeAgo(s.created)}</td><td>${score}</td><td>${statusTag(s.status)}</td>
       <td><a class="btn ${s.status === 'submitted' ? 'btn-primary' : 'btn-ghost'}" style="height:34px" href="review.html?id=${s.id}">${label}</a></td></tr>`;
   }

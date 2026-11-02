@@ -74,9 +74,8 @@ class MessagingTests(ServerTestCase):
         audition = find_opportunity(rhonda, "Lead Tenor")
         sub = {"id": self.submission_id_of("dana-brooks", audition["id"])}
         leo_id = self._user_id("leo-marquez")
-        dana_id = self._user_id("dana-brooks")
         self.assertEqual(self.client("elena-voss").json("POST", "/api/conversations", {"user_id": leo_id, "submission_id": sub["id"]})[0], 403)
-        self.assertEqual(rhonda.json("POST", "/api/conversations", {"user_id": dana_id, "submission_id": sub["id"]})[0], 403)  # still anonymous
         rhonda.json("PUT", f"/api/submissions/{sub['id']}/status", {"status": "callback"})  # Dana is already scored
-        status, data = rhonda.json("POST", "/api/conversations", {"user_id": dana_id, "submission_id": sub["id"], "body": "Callback details soon."})
+        status, data = rhonda.json("POST", "/api/conversations", {"submission_id": sub["id"], "body": "Callback details soon."})
         self.assertEqual((status, data["conversation"]["context"]["submission_id"]), (201, sub["id"]))
+        self.assertEqual(data["conversation"]["other"]["id"], None)  # the director never gets the musician's id

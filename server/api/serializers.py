@@ -28,9 +28,10 @@ def full_user(row) -> dict:
     }
 
 
-def anonymous_applicant(submission_row, instrument: str) -> dict:
-    """The only description of a musician a director may see until the submission is scored and moved to callback."""
-    label = f"Applicant A-{submission_row['id']}"
+def anonymous_applicant(label_id: int, instrument: str, prefix: str = "A") -> dict:
+    """The only description of a musician a director may ever see: no name, handle, id, location or photo.
+    `prefix` tells the sources apart: A-<submission id> for applicants, C-<conversation id> for other message partners."""
+    label = f"Applicant {prefix}-{label_id}"
     return {
         "id": None, "role": "musician", "name": label, "label": label, "handle": None, "category": None,
         "instrument": instrument, "ensemble": "", "initials": "?", "avatar_style": 0, "is_teacher": False,

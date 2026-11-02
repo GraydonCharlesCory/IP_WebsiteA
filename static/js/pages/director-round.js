@@ -10,7 +10,7 @@
   }
 
   const roundMarkup = (audition) => `<div class="round"><div class="eyebrow">Round format</div><p>${esc(formatText(audition))}</p>
-    <p class="small muted">Blind review is always on: you hear audio only and applicants stay anonymous until you score and call them back.</p></div>`;
+    <p class="small muted">Blind review is always on: you hear audio only and applicants stay anonymous in every status, including callback.</p></div>`;
 
   Tutti.directorRound = { formatText, roundMarkup };
 })();

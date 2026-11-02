@@ -9,7 +9,7 @@ OPPORTUNITIES = [
          deadline="2026-11-24", level="pro", paid=True, pay="$250 per concert, plus tour per diem",
          video_round=True, callback=("2026-12-10", "Bayview Hall, San Francisco, CA")),
     dict(director="elena-voss", title="Violin: Section Seat, Second Violins", instruments=["Violin"],
-         description="Lakeshore Symphony has an opening in the second violin section for the 2027 season, with a path to principal. The video round is reviewed blind: the panel sees only an anonymous applicant until finalists are chosen.",
+         description="Lakeshore Symphony has an opening in the second violin section for the 2027 season, with a path to principal. The video round is reviewed blind: the panel hears audio only and never learns who an applicant is.",
          requirements=["First movement of a Classical or Romantic concerto (solo or with piano)", "One movement of unaccompanied Bach", "Two orchestral excerpts of your choice"],
          timeline=[("Submissions close", "2026-11-30"), ("Live round", "2027-01-15")],
          deadline="2026-11-30", level="pro", paid=True, pay="Per-service rate under the AFM agreement",
@@ -80,7 +80,7 @@ SUBMISSIONS = [
     dict(musician="dana-brooks", audition=0, clip="dana-brooks-1.mp4",
          note="Giant Steps and Cherokee, both straight through. I can read lead sheets and charts at sight.",
          timestamps=[{"time": 0, "label": "Giant Steps"}, {"time": 22, "label": "Cherokee"}], days=2, review=REVIEW_DANA),
-    # Lakeshore audition: the director sees these applicants as anonymous until scored and moved to callback.
+    # Lakeshore audition: the director sees these applicants as anonymous in every status.
     dict(musician="adam-reyes", audition=1, clip="aiko-nakamura-1.mp4",
          note="Brahms third movement excerpt and the Bach fugue, recorded in one take with no edits. I am available to travel for the live round.",
          timestamps=[{"time": 0, "label": "Brahms, mvt. III"}, {"time": 24, "label": "Bach, Fuga"}], days=4, review=REVIEW_ADAM,

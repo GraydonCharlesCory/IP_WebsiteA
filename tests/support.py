@@ -89,3 +89,17 @@ def find_opportunity(client, title_part, **query):
     matches = [o for o in data["opportunities"] if title_part in o["title"]]
     assert matches, f"no opportunity titled like {title_part!r}"
     return matches[0]
+
+
+DIRECTOR_HANDLES = ("rhonda-holloway", "elena-voss", "priya-raman", "marcus-bell", "naomi-castellanos", "tomas-ibarra")
+
+
+def musician_identity_patterns(client) -> list:
+    """Regexes for every seeded musician's name (full and first), handle and email, read from the demo account list."""
+    import re
+    patterns = set()
+    for person in client.json("GET", "/api/accounts")[1]["musicians"]:
+        first = person["name"].split()[0]
+        local = person["email"].split("@")[0]
+        patterns.update([person["name"], first, person["handle"], person["email"], local])
+    return [re.compile(r"(?<![\w-])" + re.escape(p) + r"(?![\w-])") for p in sorted(patterns)]

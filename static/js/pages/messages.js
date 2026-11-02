@@ -1,4 +1,4 @@
-/* Messages: messages.html, ?c=<conversation id>, or ?to=<user id>[&opportunity=<id>][&submission=<id>]. */
+/* Messages: messages.html, ?c=<conversation id>, or ?to=<user id>[&opportunity=<id>][&submission=<id>], or (directors) ?submission=<id> alone: the applicant stays anonymous. */
 (function () {
   const { esc, queryParam } = Tutti.util;
   const { conversationRow, threadHeader, bubble, emptyThread } = Tutti.messageViews;
@@ -103,7 +103,7 @@
     try {
       if (state.draft) {
         const { user, context } = state.draft;
-        const { conversation } = await api.startConversation({ user_id: user.id, body: local.body, audition_id: context.audition_id, submission_id: context.submission_id });
+        const { conversation } = await api.startConversation({ user_id: user.id || undefined, body: local.body, audition_id: context.audition_id, submission_id: context.submission_id });
         state.draft = null;
         await refreshList();
         return openConversation(conversation.id);
@@ -191,10 +191,24 @@
     renderThread(other, chip);
   }
 
+  /* A director reaches an applicant only through the submission; the server finds the musician, so no id is needed. */
+  async function startDraftForSubmission(submissionId) {
+    const existing = state.conversations.find((c) => c.context.submission_id === submissionId);
+    if (existing) return openConversation(existing.id);
+    const { submission } = await api.submission(submissionId);
+    state.activeId = null;
+    state.draft = { user: submission.musician, context: { submission_id: submissionId } };
+    state.messages = [];
+    renderList();
+    renderThread(submission.musician, { submission_id: submissionId });
+  }
+
   async function openFromLink(me) {
     const conversationId = Number(queryParam('c'));
     const userId = Number(queryParam('to'));
     if (conversationId) return openConversation(conversationId);
+    const submissionId = Number(queryParam('submission'));
+    if (!userId && submissionId && me.role === 'director') return startDraftForSubmission(submissionId);
     if (!userId) return state.conversations.length ? openConversation(state.conversations[0].id) : undefined;
     if (userId === me.id) throw new Error('You cannot message yourself.');
     const existing = state.conversations.find((c) => c.other.id === userId);

@@ -1,7 +1,7 @@
 /* Markup for the messages page: conversation list rows, thread header and bubbles. Tutti.messageViews */
 (function () {
   const { esc, timeAgo } = Tutti.util;
-  const { avatar } = Tutti.components;
+  const avatar = (user) => Tutti.applicantAvatar(user);
 
   const roleLabel = (user) => (user.role === 'director' ? [user.ensemble, 'Director'].filter(Boolean).join(' · ') : (user.instrument || 'Musician'));
 

@@ -6,8 +6,8 @@ from ..errors import bad_request, forbidden, not_found
 from ..responses import JsonResponse
 from ..validation import require_text
 from . import ROUTER
-from .lookups import get_user, is_anonymous
-from .serializers import brief_user
+from .lookups import get_user
+from .serializers import anonymous_applicant, brief_user
 
 
 def unread_total(conn, user_id: int) -> int:
@@ -18,9 +18,15 @@ def unread_total(conn, user_id: int) -> int:
     ).fetchone()[0]
 
 
-def _message_json(row, viewer_id: int) -> dict:
-    return {"id": row["id"], "conversation_id": row["conversation_id"], "sender_id": row["sender_id"], "body": row["body"],
-            "created": row["created"], "read": row["read_at"] is not None, "mine": row["sender_id"] == viewer_id}
+def _is_director(ctx) -> bool:
+    return ctx.user["role"] == "director"
+
+
+def _message_json(ctx, row) -> dict:
+    """A director never learns the other person's user id, so only their own messages carry a sender id."""
+    mine = row["sender_id"] == ctx.user["id"]
+    return {"id": row["id"], "conversation_id": row["conversation_id"], "sender_id": row["sender_id"] if mine or not _is_director(ctx) else None,
+            "body": row["body"], "created": row["created"], "read": row["read_at"] is not None, "mine": mine}
 
 
 def _participant_conversation(ctx, conversation_id: int):
@@ -33,28 +39,27 @@ def _participant_conversation(ctx, conversation_id: int):
     return row
 
 
-def _hidden_from_director(ctx, submission_id: int) -> bool:
-    """True when the viewer is the audition's director and the submission is still anonymous."""
-    submission = ctx.db.execute("SELECT * FROM submissions WHERE id=?", (submission_id,)).fetchone()
-    audition = ctx.db.execute("SELECT * FROM auditions WHERE id=?", (submission["audition_id"],)).fetchone()
-    return audition["director_id"] == ctx.user["id"] and is_anonymous(ctx.db, submission)
+def _other_party(ctx, row) -> dict:
+    """The person on the other side as the viewer may see them: a director only ever sees a musician as an anonymous applicant."""
+    other = get_user(ctx.db, row["user_high"] if row["user_low"] == ctx.user["id"] else row["user_low"])
+    if not (_is_director(ctx) and other["role"] == "musician"):
+        return brief_user(other)
+    if row["submission_id"]:
+        return anonymous_applicant(row["submission_id"], other["instrument"])
+    return anonymous_applicant(row["id"], other["instrument"], prefix="C")
 
 
 def _conversation_json(ctx, row) -> dict:
     me = ctx.user["id"]
-    other = get_user(ctx.db, row["user_high"] if row["user_low"] == me else row["user_low"])
     last = ctx.db.execute("SELECT * FROM messages WHERE conversation_id=? ORDER BY id DESC LIMIT 1", (row["id"],)).fetchone()
     unread = ctx.db.execute(
         "SELECT COUNT(*) FROM messages WHERE conversation_id=? AND sender_id!=? AND read_at IS NULL", (row["id"], me)
     ).fetchone()[0]
     audition = ctx.db.execute("SELECT id, title FROM auditions WHERE id=?", (row["audition_id"],)).fetchone() if row["audition_id"] else None
-    submission_id = row["submission_id"]
-    if submission_id and _hidden_from_director(ctx, submission_id):
-        audition, submission_id = None, None  # a link made while the applicant was still anonymous must not unmask them
     return {
-        "id": row["id"], "other": brief_user(other),
-        "context": {"opportunity": dict(audition) if audition else None, "submission_id": submission_id},
-        "last_message": _message_json(last, me) if last else None, "unread_count": unread,
+        "id": row["id"], "other": _other_party(ctx, row),
+        "context": {"opportunity": dict(audition) if audition else None, "submission_id": row["submission_id"]},
+        "last_message": _message_json(ctx, last) if last else None, "unread_count": unread,
         "updated": last["created"] if last else row["created"],
     }
 
@@ -73,7 +78,7 @@ def get_conversation(ctx):
     """Participants only. Opening does not mark messages read: call POST .../read."""
     row = _participant_conversation(ctx, ctx.params["conversation_id"])
     messages = ctx.db.execute("SELECT * FROM messages WHERE conversation_id=? ORDER BY id", (row["id"],)).fetchall()
-    return {"conversation": _conversation_json(ctx, row), "messages": [_message_json(m, ctx.user["id"]) for m in messages]}
+    return {"conversation": _conversation_json(ctx, row), "messages": [_message_json(ctx, m) for m in messages]}
 
 
 def _context_ids(ctx, data) -> tuple:
@@ -87,11 +92,23 @@ def _context_ids(ctx, data) -> tuple:
         me = ctx.user["id"]
         if not submission or me not in (submission["musician_id"], audition["director_id"]):
             raise forbidden("You can only link a conversation to your own submission or one sent to your audition.")
-        if is_anonymous(ctx.db, submission):
-            log.info("Refused linking a conversation to blind submission %s for user %s", submission["id"], me)
-            raise forbidden("This submission is under blind review, so it cannot be linked to a conversation until you have scored it and moved it to callback.")
         audition_id = audition_id or audition["id"]
     return audition_id, submission_id
+
+
+def _recipient_id(ctx, data, submission_id) -> int:
+    """Who a new conversation goes to. A director reaches a musician only through a submission sent to their audition,
+    so the applicant's id never leaves the server; otherwise the person is named with `user_id` (a director still sees a
+    musician as anonymous in every response)."""
+    if _is_director(ctx) and submission_id is not None:
+        return ctx.db.execute("SELECT musician_id FROM submissions WHERE id=?", (submission_id,)).fetchone()["musician_id"]
+    other_id = data.get("user_id")
+    other = get_user(ctx.db, other_id) if isinstance(other_id, int) else None
+    if not other:
+        raise not_found("That person does not exist.")
+    if other_id == ctx.user["id"]:
+        raise bad_request("You cannot start a conversation with yourself.")
+    return other_id
 
 
 def _insert_message(ctx, conversation_id: int, body: str) -> dict:
@@ -99,7 +116,7 @@ def _insert_message(ctx, conversation_id: int, body: str) -> dict:
         "INSERT INTO messages (conversation_id, sender_id, body, created) VALUES (?,?,?,?)",
         (conversation_id, ctx.user["id"], body, now_iso()),
     )
-    return _message_json(ctx.db.execute("SELECT * FROM messages WHERE id=?", (cur.lastrowid,)).fetchone(), ctx.user["id"])
+    return _message_json(ctx, ctx.db.execute("SELECT * FROM messages WHERE id=?", (cur.lastrowid,)).fetchone())
 
 
 @ROUTER.route("POST", "/api/conversations")
@@ -108,12 +125,8 @@ def start_conversation(ctx):
     optionally linked to an audition/gig or one of your submissions for context, and sends `body` if given."""
     me = require_user(ctx)["id"]
     data = ctx.json()
-    other_id = data.get("user_id")
-    if not isinstance(other_id, int) or not get_user(ctx.db, other_id):
-        raise not_found("That person does not exist.")
-    if other_id == me:
-        raise bad_request("You cannot start a conversation with yourself.")
     audition_id, submission_id = _context_ids(ctx, data)
+    other_id = _recipient_id(ctx, data, submission_id)
     body = require_text(data, "body", "your message", 4000) if data.get("body") is not None else None
     low, high = sorted((me, other_id))
     row = ctx.db.execute("SELECT * FROM conversations WHERE user_low=? AND user_high=?", (low, high)).fetchone()

@@ -4,7 +4,7 @@
 (function () {
   const { esc, duration } = Tutti.util;
 
-  const placeholderTitle = (submission) => `${esc(submission.musician.anonymous ? (submission.musician.label || submission.musician.name) : submission.musician.name)} — audio only`;
+  const placeholderTitle = (submission) => `${esc(submission.musician.label)} — audio only`;
 
   function tileMarkup(submission, badge) {
     const player = submission.has_audio
