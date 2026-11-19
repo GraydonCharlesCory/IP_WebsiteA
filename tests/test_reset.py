@@ -40,8 +40,9 @@ class ResetKeepsSampleFoldersTest(unittest.TestCase):
             conn.close()
             with self.assertRaises(SchemaOutOfDate) as raised:
                 prepare_data(settings)
-            self.assertIn("--reset", str(raised.exception))
-            prepare_data(settings, reset=True)  # the suggested fix works
+            self.assertIn("Do not reset", str(raised.exception))
+            with sqlite3.connect(str(settings.db_path)) as check:
+                self.assertEqual(check.execute("PRAGMA table_info(users)").fetchone()[1], "id")
 
 
 if __name__ == "__main__":

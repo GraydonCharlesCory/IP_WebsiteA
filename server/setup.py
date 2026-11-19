@@ -15,7 +15,12 @@ def prepare_data(settings: Settings, reset: bool = False) -> None:
     db.init_schema(settings.db_path)
     conn = db.connect(settings.db_path)
     try:
-        if db.is_empty(conn):
+        fresh_demo = db.is_empty(conn)
+        if fresh_demo:
             seed(conn, settings.clips_dir)
+        from .seed_v3 import seed_v3
+        seed_v3(conn)
+        from .seed_discovery import seed_discovery
+        seed_discovery(conn, fresh_demo)
     finally:
         conn.close()

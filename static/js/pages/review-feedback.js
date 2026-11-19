@@ -6,11 +6,9 @@
   const { CRITERIA, average } = Tutti.reviewScores;
 
   function previewMarkup({ scores, comments, notes }, includeNotes) {
-    const avg = average(scores);
-    const rows = CRITERIA.filter(([key]) => scores[key]).map(([key, label]) => `<div class="fb-row"><span>${label}</span><b>${scores[key]}/10</b></div>`).join('');
     const noteRows = includeNotes && notes.length ? `<div class="eyebrow">Timestamped notes</div>${notes.map((n) => `<div class="tc"><span class="tc-time">${duration(n.time)}</span><span>${esc(n.text)}</span></div>`).join('')}` : '';
-    if (avg === null && !comments && !noteRows) return '<p class="small muted">Nothing to share yet. Add a score or a comment first.</p>';
-    return `<div class="fb-avg">${avg === null ? '—' : avg.toFixed(1)}<small>/10 average</small></div>${rows}
+    if (!comments && !noteRows) return '<p class="small muted">Nothing to share yet. Add a comment first. Scores and composites are never shared.</p>';
+    return `
       ${comments ? `<div class="eyebrow">Comments</div><p class="fb-comments">${esc(comments)}</p>` : ''}${noteRows}`;
   }
 
@@ -22,7 +20,7 @@
       const first = 'the applicant';
       container.innerHTML = `<div class="fb-head"><div class="eyebrow">Share feedback with applicant</div>
           ${state.shared ? '<span class="tag ok">✓ Shared</span>' : '<span class="tag grey">Not shared</span>'}</div>
-        <p class="small muted">${state.shared ? `${first} can see this now. Changes you make here are not shown to them until you share again.` : `Nothing below is visible to ${first} until you share it.`}</p>
+        <p class="small muted">${state.shared ? `${first} can see this now. Saved changes to shared comments are visible to them. Scores and composites stay private.` : `Nothing below is visible to ${first} until you share it.`}</p>
         <div class="fb-preview" aria-label="What the musician will see">${previewMarkup(getReview(), state.includeNotes)}</div>
         <label class="check"><input type="checkbox" id="includeNotes" ${state.includeNotes ? 'checked' : ''}><span>Include my timestamped notes</span></label>
         <div class="fb-actions"><button class="btn btn-primary" id="shareButton">${state.shared ? 'Update shared feedback' : 'Share feedback'}</button>

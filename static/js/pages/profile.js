@@ -45,21 +45,21 @@
   async function refreshAfterEndorse(user) {
     try {
       renderMusician(await api.musician(handle), user);
-      Tutti.toast('Endorsement posted', 'ok');
+      Tutti.toast('Professional connection posted', 'ok');
     } catch (error) {
       Tutti.reportError(error, 'profile refresh after endorsement');
     }
   }
 
-  function renderMusician({ musician, clips, posts, stats, badges = [], endorsements = [] }, user) {
+  function renderMusician({ musician, clips, posts, demo_enrichment = {}, badges = [], connections = [] }, user) {
     const facts = [musician.instrument, musician.location, musician.ensemble].filter(Boolean).map((f) => `<span>${esc(f)}</span>`).join('');
     document.title = `Tutti — ${musician.name}`;
     document.documentElement.style.setProperty('--acc', `var(--${section(musician.category).css})`);
     content.innerHTML = `<div class="cover"></div><main class="wrap">
       <div class="idrow">${avatar(musician, 'lg')}<div class="who"><div class="name-row"><h1>${esc(musician.name)}</h1>${categoryTag(musician.category)}</div><div class="facts">${facts}</div>${Tutti.credibility.badgeRow(badges)}</div>
-        <div class="actions">${isOwnProfile(user, musician) ? '<button class="btn btn-primary" id="uploadClipButton" type="button">Upload a clip</button>' : Tutti.credibility.viewerActions(user, musician)}</div></div>
-      <div class="stats"><div><b>${stats.clips}</b><span>Clips</span></div><div><b>${stats.posts}</b><span>Posts</span></div></div>
-      <div class="layout"><div>${clipsSection(clips)}${postsSection(posts, musician)}${Tutti.credibility.endorsementsSection(endorsements)}</div>${sidebar(musician)}</div></main>`;
+        <div class="actions">${isOwnProfile(user, musician) ? '<a class="btn btn-ghost" href="profile-edit.html">Edit profile</a><button class="btn btn-primary" id="uploadClipButton" type="button">Upload a clip</button>' : Tutti.credibility.viewerActions(user, musician)}</div></div>
+      ${Tutti.credibility.credentials(musician, demo_enrichment)}
+      <div class="layout"><div>${clipsSection(clips)}${postsSection(posts, musician)}${Tutti.credibility.endorsementsSection(connections)}</div>${sidebar(musician)}</div></main>`;
     Tutti.components.wire(content);
     const uploadButton = document.getElementById('uploadClipButton');
     if (uploadButton) uploadButton.onclick = () => Tutti.uploadClipDialog.open(() => refreshAfterUpload(user));

@@ -10,6 +10,12 @@
 .filters-card{padding:18px 22px;margin-bottom:18px}
 .filter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
 .filter-field{display:grid;gap:6px;font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
-.filter-field .input{height:40px;font-size:14px;text-transform:none;letter-spacing:0;font-weight:400;color-scheme:dark}
+.filter-field .input{height:44px;font-size:14px;text-transform:none;letter-spacing:0;font-weight:400;color-scheme:inherit}
 .board-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .board-bar .btn{height:34px;font-size:13px}
+/* Round-four discovery landing and explicit student hub. */
+.discover-hero{display:grid;grid-template-columns:1.2fr .8fr;gap:30px;align-items:end;margin-bottom:32px}
+.discover-hero p{max-width:280px}.discover-columns{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px}
+.discovery-stack{display:grid;gap:22px;align-content:start}.discovery-aside{background:var(--surface-2);border-radius:var(--r);padding:25px}
+.student-filters,.student-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}.student-grid .app{align-content:start}
+@media(max-width:760px){.discover-hero,.discover-columns,.student-grid,.student-filters{grid-template-columns:minmax(0,1fr)}.discover-hero p{max-width:100%}.student-grid h3{overflow-wrap:anywhere}}

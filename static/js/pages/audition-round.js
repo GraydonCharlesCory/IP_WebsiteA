@@ -27,7 +27,7 @@
     const mine = audition.my_submission;
     return `<div class="card pad stack"><div style="display:flex;justify-content:space-between;align-items:center">
         ${statusTag(mine.status)}<span class="small muted">${date(mine.created, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span></div>
-      <div><b>Your clip is with ${esc(audition.director.name)}</b><div class="small muted">Only the director sees scores and comments unless they share feedback.</div></div>
+      <div><b>Your application is submitted</b><div class="small muted">Only feedback explicitly shared by the organizer appears in your applications.</div></div>
       <a class="btn btn-ghost" href="applications.html">See your application</a></div>`;
   }
 

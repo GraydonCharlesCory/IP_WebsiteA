@@ -31,17 +31,17 @@ def endorsements_for(conn, user_id: int) -> list:
     return [endorsement_json(conn, r) for r in rows]
 
 
-@ROUTER.route("POST", "/api/musicians/<handle>/endorsements")
+@ROUTER.route("POST", "/api/musicians/<handle>/connections")
 def endorse(ctx):
     """Directors and teachers: {text, relationship?} (for example "Taught him for three years")."""
     author = require_user(ctx)
     if author["role"] != "director" and not author["is_teacher"]:
-        raise forbidden("Only directors and teachers can endorse a musician.")
+        raise forbidden("Only directors and teachers can record a professional connection.")
     musician = get_musician_by_handle(ctx.db, ctx.params["handle"])
     if musician["id"] == author["id"]:
-        raise forbidden("You cannot endorse yourself.")
+        raise forbidden("You cannot connect to yourself.")
     data = ctx.json()
-    text = require_text(data, "text", "your endorsement", 1000)
+    text = require_text(data, "text", "your professional connection", 1000)
     relationship = (data.get("relationship") or "").strip()[:120]
     cur = ctx.db.execute(
         "INSERT INTO endorsements (musician_id, author_id, relationship, text, created) VALUES (?,?,?,?,?)",
@@ -49,7 +49,7 @@ def endorse(ctx):
     )
     ctx.db.commit()
     row = ctx.db.execute("SELECT * FROM endorsements WHERE id=?", (cur.lastrowid,)).fetchone()
-    return JsonResponse({"endorsement": endorsement_json(ctx.db, row)}, 201)
+    return JsonResponse({"connection": endorsement_json(ctx.db, row)}, 201)
 
 
 @ROUTER.route("POST", "/api/me/badges")

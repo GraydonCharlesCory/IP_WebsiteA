@@ -17,16 +17,23 @@ def open_opportunity_rows(conn, ensemble_id: int):
     ).fetchall()
 
 
-def ensemble_json(conn, row, detail: bool = False) -> dict:
+def ensemble_json(conn, row, detail: bool = False, viewer=None) -> dict:
+    show_directors = viewer is not None and viewer["role"] in ("director", "school")
     director = conn.execute("SELECT * FROM users WHERE id=?", (row["director_id"],)).fetchone()
     opportunities = open_opportunity_rows(conn, row["id"])
     data = {
         **ensemble_brief(row), "about": row["about"], "founded": row["founded"], "season": row["season"],
-        "director": brief_user(director), "open_opportunity_count": len(opportunities),
+        "open_opportunity_count": len(opportunities),
     }
+    if show_directors:
+        data["director"] = brief_user(director)
     if detail:
+        roster = load_list(row["roster"])
+        if not show_directors:
+            director_names = {r["name"].casefold() for r in conn.execute("SELECT name FROM users WHERE role='director'")}
+            roster = [p for p in roster if p["name"].casefold() not in director_names]
         data.update({
-            "highlights": load_list(row["highlights"]), "roster": load_list(row["roster"]),
+            "highlights": load_list(row["highlights"]), "roster": roster,
             "open_opportunities": [opportunity_card(r) for r in opportunities],
         })
     return data

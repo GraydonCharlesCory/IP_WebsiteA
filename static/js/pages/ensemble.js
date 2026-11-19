@@ -2,7 +2,7 @@
 (function () {
   const { esc, queryParam } = Tutti.util;
   const { avatar, categoryTag } = Tutti.components;
-  const { ensembleLogo, opportunityCard, messageHref } = Tutti.opportunityCards;
+  const { ensembleLogo, opportunityCard } = Tutti.opportunityCards;
   const { showFailure } = Tutti.pageUtil;
   const root = document.getElementById('pageRoot');
 
@@ -37,11 +37,10 @@
 
   function directorCard(ensemble, user) {
     const director = ensemble.director;
-    const canMessage = !user || user.id !== director.id;
-    const message = canMessage ? `<a class="btn btn-primary" href="${messageHref(director.id)}">Message the director</a>` : '';
+    if (!director) return '';
     return `<aside class="apply"><div class="card pad stack"><div class="eyebrow">Director</div>
       <div class="ens">${avatar(director)}<div><b>${esc(director.name)}</b><div class="small muted">${esc(director.instrument)}</div></div></div>
-      ${message}<p class="small muted">Directors see your profile and clips when you message them.</p></div></aside>`;
+      <p class="small muted">Apply through the opportunity page. Direct messaging is not available.</p></div></aside>`;
   }
 
   async function load(user) {

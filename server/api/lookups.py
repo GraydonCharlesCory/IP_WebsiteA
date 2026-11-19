@@ -23,7 +23,8 @@ def get_musician_by_handle(conn, handle: str):
 
 def owned_audition(ctx, audition_id: int):
     """The audition, only if the signed-in director posted it."""
-    director = require_role(ctx, "director", "see submissions")
+    from .schools import posting_account
+    director = posting_account(ctx)
     audition = get_audition(ctx.db, audition_id)
     if audition["director_id"] != director["id"]:
         raise forbidden("Only the director who posted this audition can see its submissions.")
@@ -32,7 +33,6 @@ def owned_audition(ctx, audition_id: int):
 
 def owned_submission(ctx, submission_id: int):
     """(submission, audition), only if the signed-in director posted the audition."""
-    require_role(ctx, "director", "see submissions")
     submission = ctx.db.execute("SELECT * FROM submissions WHERE id = ?", (submission_id,)).fetchone()
     if not submission:
         raise not_found("That submission does not exist.")

@@ -49,9 +49,8 @@
     ]);
     const trending = clips.filter((c) => c.owner).slice(0, 4);
     content.innerHTML = `<main class="wrap page">${greeting(user)}
-      <div class="cats">${sections.map((s) => sectionCard(s, clips)).join('')}</div>
       ${auditionsRow(user, auditions.slice(0, 3))}
-      ${rowHead('Across Tutti', 'Trending clips')}
+      ${rowHead('Across Tutti', 'Trending clips')}<p class="spaced"><a class="btn btn-ghost" href="musicians.html">Find musicians →</a></p>
       ${trending.length ? `<div class="clips">${trending.map(trendingClip).join('')}</div>` : message('No clips yet', 'Clips musicians post will appear here.')}
       </main>`;
     Tutti.components.wire(content);

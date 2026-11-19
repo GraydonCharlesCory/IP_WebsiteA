@@ -22,6 +22,7 @@ def brief_user(row) -> dict:
 def full_user(row) -> dict:
     return {
         **brief_user(row), "bio": row["bio"], "location": row["location"],
+        "education": load_list(row["education"]), "certifications": load_list(row["certifications"]),
         "teaching": {
             "blurb": row["teacher_blurb"], "instruments": load_list(row["instruments_taught"]), "rate": row["rate_text"],
         } if row["is_teacher"] else None,
@@ -94,7 +95,8 @@ def audition_json(row, director_row) -> dict:
         **opportunity_card(row),
         "instruments": load_list(row["instruments"]), "description": row["description"],
         "requirements": load_list(row["requirements"]), "timeline": load_list(row["timeline"]),
-        "created": row["created"], "director": brief_user(director_row),
+        "created": row["created"], "blind_review": bool(row["blind_review"]),
+        "rubric": load_list(row["rubric"]), "school_id": row["school_id"],
         "callback": {"date": row["callback_date"], "location": row["callback_location"]}
         if row["callback_date"] or row["callback_location"] else None,
     }
@@ -112,7 +114,6 @@ def review_json(row) -> dict:
 def shared_feedback_json(row) -> dict:
     """What a musician may see of a review once the director shares it (notes only on explicit request)."""
     data = {
-        "average": row["average"], "scores": {name: row[name] for name in REVIEW_CRITERIA},
         "comments": row["comments"], "shared_at": row["feedback_shared_at"], "notes": None,
     }
     if row["feedback_includes_notes"]:

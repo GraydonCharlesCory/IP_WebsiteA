@@ -1,5 +1,6 @@
 /* Five 1-10 segmented selectors with a live average: Tutti.reviewScores.mount(container, scores, onChange) */
 (function () {
+  const { esc } = Tutti.util;
   const CRITERIA = [['tone', 'Tone'], ['rhythm', 'Rhythm'], ['technique', 'Technique'], ['musicality', 'Musicality'], ['preparation', 'Preparation']];
 
   function average(scores) {
@@ -15,18 +16,18 @@
   function rowMarkup([key, label], value) {
     const buttons = Array.from({ length: 10 }, (_, i) => {
       const n = i + 1;
-      return `<button type="button" data-criterion="${key}" data-value="${n}" aria-label="${label} ${n}" class="${n === value ? 'sel' : value && n < value ? 'fill' : ''}">${n}</button>`;
+      return `<button type="button" data-criterion="${key}" data-value="${n}" aria-label="${esc(label)} ${n}" class="${n === value ? 'sel' : value && n < value ? 'fill' : ''}">${n}</button>`;
     }).join('');
-    return `<div class="rrow"><div class="l">${label}<span>${value ?? '—'}</span></div><div class="seg">${buttons}</div></div>`;
+    return `<div class="rrow"><div class="l">${esc(label)}<span>${value ?? '—'}</span></div><div class="seg">${buttons}</div></div>`;
   }
 
   /* Draws the selectors into `container`; calls onChange(scores) after each click. Returns {scores, average}. */
-  function mount(container, initial, onChange) {
+  function mount(container, initial, onChange, criteria = CRITERIA) {
     const scores = { ...initial };
     const averageTarget = document.getElementById('avg');
     const draw = () => {
-      container.innerHTML = CRITERIA.map((c) => rowMarkup(c, scores[c[0]])).join('');
-      averageTarget.innerHTML = averageMarkup(scores);
+      container.innerHTML = criteria.map((c) => rowMarkup(c, scores[c[0]])).join('');
+      if (averageTarget) averageTarget.innerHTML = averageMarkup(scores);
     };
     container.addEventListener('click', (event) => {
       const button = event.target.closest('button[data-criterion]');

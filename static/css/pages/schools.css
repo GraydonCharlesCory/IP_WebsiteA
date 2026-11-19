@@ -1,0 +1,24 @@
+/* School directory and profile: approved banner/identity/modular-card hierarchy. */
+.school-search{display:flex;gap:12px;align-items:end}.school-search .field{flex:1;font-size:12px}
+.school-resultbar{display:flex;justify-content:space-between;gap:14px;font-size:12px;margin:20px 0}
+.directory-row{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:20px;align-items:center;padding:28px 26px}
+.directory-row+.directory-row{border-top:1px solid var(--line)}
+.crest{display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;width:64px;height:64px;font:25px var(--font-display);flex-shrink:0}
+.directory-row p{font-size:13px;margin-top:5px}.directory-row:nth-child(even) .crest{background:var(--rose)}
+.school-back{margin-bottom:20px;font-size:13px;text-decoration:underline;text-underline-offset:4px}
+.school-header{overflow:hidden}.school-cover{height:180px;background:linear-gradient(110deg,#aebead,#e2d1aa);position:relative;overflow:hidden}
+.school-cover:before{content:'';position:absolute;inset:30px -35px -90px 35%;border:1px solid #71836c;border-radius:50%;transform:rotate(-15deg);box-shadow:0 0 0 28px #ffffff18,0 0 0 29px #71836c66,0 0 0 58px #ffffff22,0 0 0 59px #71836c66}
+.school-cover span{position:absolute;right:24px;top:20px;color:#344734;font-size:11px;letter-spacing:.2em}
+.school-identity{padding:0 30px 26px}.school-identity .crest{width:86px;height:86px;border:5px solid var(--surface);border-radius:17px;margin-top:-43px;position:relative;background:#46634f;color:#faf5e8;font-size:34px}
+.school-identity h1{font-size:clamp(30px,3.8vw,46px);margin:18px 0 8px}.school-identity p{font-size:13px}
+.spaced{margin-top:20px}.school-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:22px}
+.schooltabs{padding:0 30px;margin:0;gap:22px}.schooltabs button{font-size:13px}
+.school-columns{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px}
+.school-stack{display:grid;gap:22px;align-content:start}.schools-page .pad{padding:26px}
+.listline{padding:16px 0;border-bottom:1px solid var(--line)}.listline:last-child{border:0;padding-bottom:0}.listline p{font-size:13px;margin-top:5px}
+.schools-page ul{padding-left:20px;margin-top:8px;font-size:13px}.schools-page li+li{margin-top:6px}
+.school-aside{background:var(--surface-2);border-radius:var(--r);padding:25px}.school-aside p{font-size:13px;margin:12px 0 20px}
+.textlink{text-decoration:underline;text-underline-offset:4px;font-size:13px}
+#schoolEditor summary{cursor:pointer;min-height:44px}#schoolEditor form{display:grid;gap:14px;margin-bottom:20px}#schoolEmpty p{margin:14px 0 20px}
+@media(max-width:1100px){.school-columns{grid-template-columns:minmax(0,1fr) 230px}.directory-row{grid-template-columns:52px minmax(0,1fr);gap:15px}.directory-row>.btn{grid-column:2;justify-self:start}}
+@media(max-width:760px){.school-columns{grid-template-columns:1fr}.school-cover{height:130px}.school-identity{padding:0 20px 22px}.schooltabs{padding:0 20px;gap:14px}.schooltabs button{font-size:11px}.school-actions .btn-primary{width:100%}.directory-row{padding:23px 18px;grid-template-columns:48px minmax(0,1fr)}.directory-row .crest{width:48px;height:48px;font-size:20px}.directory-row h2{font-size:23px}.directory-row p{font-size:12px}.school-search{flex-wrap:wrap}.school-search .field{flex-basis:100%}.school-search .btn{width:100%}.schools-page .pad{padding:21px}}

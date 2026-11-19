@@ -25,12 +25,12 @@ def list_ensembles(ctx):
         sql += " AND lower(name || ' ' || city || ' ' || state || ' ' || about) LIKE ?"
         args.append(f"%{ctx.query['q'].lower()}%")
     rows = ctx.db.execute(sql + " ORDER BY name", args).fetchall()
-    return {"ensembles": [ensemble_json(ctx.db, r) for r in rows]}
+    return {"ensembles": [ensemble_json(ctx.db, r, viewer=ctx.user) for r in rows]}
 
 
 @ROUTER.route("GET", "/api/ensembles/<ensemble_id:int>")
 def ensemble_page(ctx):
-    return {"ensemble": ensemble_json(ctx.db, get_ensemble(ctx.db, ctx.params["ensemble_id"]), detail=True)}
+    return {"ensemble": ensemble_json(ctx.db, get_ensemble(ctx.db, ctx.params["ensemble_id"]), detail=True, viewer=ctx.user)}
 
 
 def _roster(data, current) -> str:
@@ -57,4 +57,4 @@ def edit_ensemble(ctx):
         (pick("about"), pick("season"), pick("city"), pick("state"), highlights, _roster(data, row), row["id"]),
     )
     ctx.db.commit()
-    return {"ensemble": ensemble_json(ctx.db, get_ensemble(ctx.db, row["id"]), detail=True)}
+    return {"ensemble": ensemble_json(ctx.db, get_ensemble(ctx.db, row["id"]), detail=True, viewer=ctx.user)}

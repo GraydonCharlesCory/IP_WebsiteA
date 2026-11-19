@@ -3,7 +3,9 @@
 `/api/auditions` is the v1 address for auditions only; `/api/opportunities` covers auditions and gigs.
 """
 from ..auth import require_role, require_user
+from ..demo_enrichment import opportunity_example
 from ..db import load_list, now_iso
+from ..discovery import metadata, validate_metadata, save_metadata
 from ..errors import bad_request, forbidden
 from ..responses import JsonResponse
 from ..validation import optional_text, parse_flag, require_category, require_choice, require_date, require_text, string_list
@@ -41,7 +43,10 @@ def _key(ctx) -> str:
 @ROUTER.route("GET", "/api/auditions/<audition_id:int>")
 def opportunity_detail(ctx):
     require_user(ctx)
-    return {_key(ctx): opportunity_json(ctx, get_audition(ctx.db, ctx.params["audition_id"]))}
+    row = get_audition(ctx.db, ctx.params["audition_id"])
+    data = opportunity_json(ctx, row)
+    data["demo_enrichment"] = opportunity_example(ctx.db, row)
+    return {_key(ctx): data}
 
 
 def _timeline(data) -> list:
@@ -67,14 +72,15 @@ def _create_defaults(conn, director) -> dict:
 
 def _fields(data, current: dict, creating: bool) -> dict:
     """Validated audition columns: request values over the current row (or the create defaults)."""
-    if "blind_review" in data:
-        raise bad_request("Blind review is always on for auditions and cannot be changed. Remove 'blind_review' from the request.")
+    if "blind_review" in data and not creating:
+        raise bad_request("Review mode is immutable after creation. Post a new audition to choose a different mode.")
     merged = {**current, **{k: v for k, v in data.items() if k in TEXT_FIELDS or k in FLAGS}}
     kind = merged["type"]
     if not creating and kind != current["type"]:
         raise bad_request("An opportunity's type cannot change after it is posted. Post a new one instead.")
     flags = {name: int(parse_flag(merged.get(name, False), name)) for name in FLAGS}
     return {
+        "blind_review": int(parse_flag(data.get("blind_review", True), "blind_review")) if creating else current["blind_review"],
         "title": require_text(merged, "title", "a title", 160),
         "ensemble": require_text(merged, "ensemble", "the ensemble name", 160),
         "description": optional_text(merged, "description"),
@@ -100,15 +106,23 @@ def create_opportunity(ctx):
     """Director: {title, deadline, type?: audition|gig, gig?: {...}, level?, paid?, pay_text?, city?, state?,
     video_round_accepted?, callback_date?, callback_location?, category?, ensemble?, description?,
     instruments[], requirements[], timeline[{label,date}], status?}."""
-    director = require_role(ctx, "director", "post auditions and gigs")
+    from .schools import posting_account
+    director = posting_account(ctx)
     data = ctx.json()
     fields = _fields(data, _create_defaults(ctx.db, director), creating=True)
+    discovery = validate_metadata(data, {"genre": "", "eligibility": [], "student_hub": False})
     gig = gig_columns(data) if fields["type"] == "gig" else {}
     ensemble = director_ensemble(ctx.db, director)
     columns = {"director_id": director["id"], "ensemble_id": ensemble["id"] if ensemble else None, **fields, "created": now_iso()}
+    from .judging import validate_rubric
+    columns["rubric"] = dumps(validate_rubric(data.get("rubric", ["tone", "rhythm", "technique", "musicality", "preparation"])))
+    if director["role"] == "school":
+        from .schools import owned_school
+        columns["school_id"] = owned_school(ctx, data.get("school_id"))["id"]
     cur = ctx.db.execute(
         f"INSERT INTO auditions ({', '.join(columns)}) VALUES ({', '.join('?' * len(columns))})", list(columns.values())
     )
+    save_metadata(ctx.db, cur.lastrowid, discovery)
     save_gig(ctx.db, cur.lastrowid, gig)
     ctx.db.commit()
     return JsonResponse({_key(ctx): opportunity_json(ctx, get_audition(ctx.db, cur.lastrowid))}, 201)
@@ -118,17 +132,20 @@ def create_opportunity(ctx):
 @ROUTER.route("PUT", "/api/auditions/<audition_id:int>")
 def edit_opportunity(ctx):
     """Owner: any of the create fields (blind review is always on and cannot be set)."""
-    director = require_role(ctx, "director", "edit auditions and gigs")
+    from .schools import posting_account
+    director = posting_account(ctx)
     row = get_audition(ctx.db, ctx.params["audition_id"])
     if row["director_id"] != director["id"]:
         raise forbidden("You can only edit auditions and gigs you posted.")
     data = ctx.json()
     fields = _fields(data, dict(row), creating=False)
+    discovery = validate_metadata(data, metadata(ctx.db, row["id"]))
     gig = gig_columns(data, current=ctx.db.execute("SELECT * FROM gig_details WHERE audition_id=?", (row["id"],)).fetchone()) \
         if row["type"] == "gig" and "gig" in data else {}
     ctx.db.execute(
         f"UPDATE auditions SET {', '.join(f'{name}=?' for name in fields)} WHERE id=?", [*fields.values(), row["id"]]
     )
+    save_metadata(ctx.db, row["id"], discovery)
     save_gig(ctx.db, row["id"], gig)
     ctx.db.commit()
     return {_key(ctx): opportunity_json(ctx, get_audition(ctx.db, row["id"]))}

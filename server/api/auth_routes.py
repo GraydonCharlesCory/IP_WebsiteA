@@ -5,12 +5,11 @@ from ..responses import JsonResponse
 from ..validation import require_text
 from . import ROUTER
 from .lookups import get_user
-from .messaging import unread_total
 from .serializers import brief_user, own_user
 
 
 def _own_user_json(ctx, user) -> dict:
-    return {**own_user(user), "unread_messages": unread_total(ctx.db, user["id"])}
+    return own_user(user)
 
 
 def _sign_in(ctx, user):
@@ -31,6 +30,7 @@ def accounts(ctx):
     return {
         "musicians": [p for p in people if p["role"] == "musician"],
         "directors": [p for p in people if p["role"] == "director"],
+        "schools": [p for p in people if p["role"] == "school"],
     }
 
 
@@ -47,7 +47,7 @@ def sign_in(ctx):
 def sign_in_as_role(ctx):
     """Demo shortcut: one click into the first seed account of a role."""
     role = ctx.json().get("role")
-    if role not in ("musician", "director"):
+    if role not in ("musician", "director", "school"):
         raise bad_request("Choose a role: 'musician' or 'director'.")
     user = ctx.db.execute("SELECT * FROM users WHERE role = ? ORDER BY id LIMIT 1", (role,)).fetchone()
     if not user:

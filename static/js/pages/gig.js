@@ -2,7 +2,7 @@
 (function () {
   const { esc, date, queryParam } = Tutti.util;
   const { avatar, categoryTag } = Tutti.components;
-  const { ensembleLogo, ensembleLink, ensembleHref, deadlineTag, threeMsPanel, messageHref } = Tutti.opportunityCards;
+  const { ensembleLogo, ensembleLink, ensembleHref, deadlineTag, threeMsPanel } = Tutti.opportunityCards;
   const { showFailure } = Tutti.pageUtil;
   const root = document.getElementById('pageRoot');
 
@@ -29,7 +29,8 @@
   function hostCard(gig) {
     const director = gig.director;
     const ensemble = gig.ensemble_info ? `<a class="btn btn-ghost" href="${ensembleHref(gig.ensemble_info.id)}">See ${esc(gig.ensemble_info.name)}</a>` : '';
-    const message = gig.owned_by_me ? '' : `<a class="btn btn-primary" href="${messageHref(director.id)}">Message ${esc(director.name)}</a>`;
+    if (!director) return ensemble ? `<div class="card pad stack">${ensemble}</div>` : '';
+    const message = '';
     return `<div class="card pad stack"><div class="eyebrow">Posted by</div>
       <div class="ens">${avatar(director)}<div><b>${esc(director.name)}</b><div class="small muted">${esc(director.instrument)}</div></div></div>${message}${ensemble}</div>`;
   }

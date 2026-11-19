@@ -81,7 +81,9 @@ class StatusAndFeedbackTests(ServerTestCase):
         status, data = self.rhonda.json("PUT", f"/api/submissions/{self.leo}/feedback", {"shared": True})
         self.assertEqual((status, data["submission"]["review"]["feedback_shared"]), (200, True))
         feedback = self._application("leo-marquez", self.audition["id"])["feedback"]
-        self.assertEqual((feedback["average"], feedback["comments"], feedback["scores"]["tone"], feedback["notes"]), (8.0, "Lovely ballad", 8, None))
+        self.assertEqual((feedback["comments"], feedback["notes"]), ("Lovely ballad", None))
+        for field in ("average", "scores", "composite"):
+            self.assertNotIn(field, feedback)
         self.assertNotIn("secret", json.dumps(self.client("leo-marquez").json("GET", "/api/my/applications")[1]))
         self.rhonda.json("PUT", f"/api/submissions/{self.leo}/feedback", {"shared": True, "include_notes": True})
         self.assertEqual(self._application("leo-marquez", self.audition["id"])["feedback"]["notes"][0]["text"], "secret timestamped note")
@@ -104,7 +106,8 @@ class StatusAndFeedbackTests(ServerTestCase):
         adam = self._application("adam-reyes", lakeshore)
         self.assertEqual(adam["status"], "callback")
         self.assertIn("screen", adam["callback"]["message"])
-        self.assertEqual(adam["feedback"]["average"], 8.6)
+        self.assertTrue(adam["feedback"]["comments"])
+        self.assertNotIn("average", adam["feedback"])
         self.assertNotIn("Private", json.dumps(adam))
         sofia = self._application("sofia-lindgren", lakeshore)
         self.assertEqual((sofia["status"], sofia["feedback"]), ("not_selected", None))

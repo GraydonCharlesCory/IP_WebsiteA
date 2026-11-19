@@ -15,6 +15,16 @@
 
   const badgeRow = (badges) => (badges.length ? `<div class="badges">${badges.map(badge).join('')}</div>` : '');
 
+  function credentials(musician, examples = {}) {
+    const simulated = '<span class="small muted">Simulated example · fictional credential, not verified</span>';
+    const education = (musician.education || []).map(item => `<li><a href="schools.html?id=${encodeURIComponent(item.school_id)}">${esc(item.school)}</a><p>${esc(item.degree)}</p></li>`)
+      .concat((examples.education || []).map(item => `<li>${simulated}<p><b>${esc(item.degree)}</b></p><p>${esc(item.school)} · ${esc(item.detail)}</p></li>`));
+    const certifications = (musician.certifications || []).map(item => `<li>${esc(item)}</li>`)
+      .concat((examples.certifications || []).map(item => `<li>${simulated}<p><b>${esc(item.title)}</b></p><p>${esc(item.issuer)} · ${esc(item.detail)}</p></li>`));
+    const group = (title, items) => `<div><h3>${title}</h3>${items.length ? `<ul>${items.join('')}</ul>` : '<p class="small muted">Not listed</p>'}</div>`;
+    return `<section class="credentials" aria-label="Degrees and certifications">${group('Education & degrees', education)}${group('Certifications', certifications)}</section>`;
+  }
+
   function endorsement(item) {
     const role = item.author.role === 'director' ? [item.author.ensemble, 'Director'].filter(Boolean).join(', ') : `${item.author.instrument || 'Musician'}, Teacher`;
     return `<div class="card pad endorse"><div class="who">${avatar(item.author, 'sm')}
@@ -25,8 +35,8 @@
   }
 
   function endorsementsSection(endorsements) {
-    const body = endorsements.length ? endorsements.map(endorsement).join('') : '<div class="card pad"><p class="small muted">No endorsements yet.</p></div>';
-    return `<section class="endorsements"><h2>Endorsements</h2>${body}</section>`;
+    const body = endorsements.length ? endorsements.map(endorsement).join('') : '<div class="card pad"><p class="small muted">No professional connections yet.</p></div>';
+    return `<section class="endorsements"><h2>Professional connections</h2><p class="small muted">Public descriptions of working or educational relationships. Not advertisements or independently verified recommendations.</p>${body}</section>`;
   }
 
   function lessonsCard(musician) {
@@ -42,9 +52,8 @@
   /* Pills next to the name: Message and Endorse, only for signed-in viewers of someone else's profile. */
   function viewerActions(user, musician) {
     if (!user || user.id === musician.id) return '';
-    return `<a class="btn btn-ghost" href="messages.html?to=${musician.id}">Message</a>${canEndorse(user, musician)
-      ? '<button class="btn btn-ghost" id="endorseButton" type="button">Endorse</button>' : ''}`;
+    return canEndorse(user, musician) ? '<button class="btn btn-ghost" id="endorseButton" type="button">Add professional connection</button>' : '';
   }
 
-  Tutti.credibility = { badgeRow, endorsementsSection, lessonsCard, viewerActions };
+  Tutti.credibility = { badgeRow, credentials, endorsementsSection, lessonsCard, viewerActions };
 })();

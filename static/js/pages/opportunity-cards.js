@@ -9,7 +9,6 @@
 
   const opportunityHref = (opp) => (opp.type === 'gig' ? `gig.html?id=${opp.id}` : `audition.html?id=${opp.id}`);
   const ensembleHref = (id) => `ensemble.html?id=${id}`;
-  const messageHref = (userId) => `messages.html?to=${userId}`;
   const profileHref = (user) => `profile.html?h=${encodeURIComponent(user.handle)}`;
 
   /* Round logo from the ensemble's initials and colour. */
@@ -22,7 +21,7 @@
   }
 
   function typeTag(opp) {
-    return `<span class="tag ${opp.type === 'gig' ? 'warn' : 'brass'}">${opp.type === 'gig' ? 'Gig' : 'Audition'}</span>`;
+    return `<span class="tag ${opp.type === 'gig' ? 'warn' : 'brass'}">${esc(opp.type.replaceAll('_', ' '))}</span>`;
   }
 
   function deadlineTag(opp) {
@@ -74,6 +73,6 @@
       <div class="chips-row"><span class="chip">${esc(opp.level)}</span>${opp.video_round_accepted ? '<span class="chip">Video round</span>' : ''}</div></article>`;
   }
 
-  Tutti.opportunityCards = { AVAILABILITY_LABELS, opportunityHref, ensembleHref, messageHref, profileHref, ensembleLogo, ensembleLink, typeTag,
+  Tutti.opportunityCards = { AVAILABILITY_LABELS, opportunityHref, ensembleHref, profileHref, ensembleLogo, ensembleLink, typeTag,
     deadlineTag, ratingDots, threeMsPills, threeMsPanel, gigWhen, opportunityCard };
 })();

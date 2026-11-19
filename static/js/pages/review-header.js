@@ -6,11 +6,11 @@
     ? `<a class="btn btn-ghost" style="height:34px" href="review.html?id=${id}">${label}</a>`
     : `<span class="btn btn-ghost disabled" style="height:34px">${label}</span>`;
 
-  const blindBanner = () => '<div class="blind-banner" role="status"><span>🙈</span><div><b>Blind review is always on.</b> You hear the audio only, with no name or photo, in every status. To contact the applicant, use Message applicant: your note reaches them without revealing who they are.</div></div>';
+  const blindBanner = (sub) => `<div class="blind-banner" role="status"><b>${sub.blind_review ? 'Blind review: audio only. Identity and applicant free text are withheld from every reviewer.' : 'Nonblind review: applicant identity and original recording are available.'}</b></div>`;
 
   function applicantRow(sub) {
     const m = sub.musician;
-    const links = [`<a class="btn btn-ghost" href="messages.html?submission=${sub.id}">Message applicant</a>`];
+    const links = [];
     return `<div class="mrow">${Tutti.applicantAvatar(m)}<div class="t"><b style="font-size:17px">${esc(m.name)}</b>
       <div class="small muted">${esc(m.instrument)} · submitted ${timeAgo(sub.created)}</div></div>${links.join('')}</div>`;
   }
@@ -24,6 +24,6 @@
       <div class="pager">${pagerLink(sub.previous_id, '← Prev')}Submission ${sub.position} of ${sub.total}${pagerLink(sub.next_id, 'Next →')}</div></div>`;
   }
 
-  const markup = (sub) => `${topBar(sub)}${blindBanner()}`;
+  const markup = (sub) => `${topBar(sub)}${blindBanner(sub)}`;
   Tutti.reviewHeader = { markup, applicantRow, applicantNote };
 })();

@@ -10,7 +10,7 @@ from ..responses import FileResponse, JsonResponse
 from ..validation import optional_text
 from . import ROUTER
 from .lookups import get_audition, owned_audition, owned_submission
-from .serializers import anonymous_applicant, review_json
+from .serializers import anonymous_applicant, review_json, full_user
 from .statuses import STATUS_LABELS, parse_status
 
 
@@ -70,7 +70,7 @@ def submit_to_audition(ctx):
     audition = get_audition(ctx.db, ctx.params["audition_id"])
     if audition["status"] != "open":
         raise ApiError(409, "This audition is closed and no longer takes submissions.")
-    if audition["type"] != "audition":
+    if audition["type"] == "gig":
         raise ApiError(409, "Gigs take availability, not submissions. Use PUT /api/gigs/<id>/availability.")
     if ctx.db.execute("SELECT 1 FROM submissions WHERE audition_id=? AND musician_id=?", (audition["id"], musician["id"])).fetchone():
         raise ApiError(409, "You have already submitted to this audition.")
@@ -84,8 +84,11 @@ def _review_for(conn, submission_id):
 
 
 def applicant_json(ctx, submission) -> dict:
-    """The musician as the director sees them: always anonymous, in every status, with no way to change that."""
-    musician = ctx.db.execute("SELECT instrument FROM users WHERE id=?", (submission["musician_id"],)).fetchone()
+    """Use the audition's immutable review mode for owners and scoped guests alike."""
+    audition = get_audition(ctx.db, submission["audition_id"])
+    musician = ctx.db.execute("SELECT * FROM users WHERE id=?", (submission["musician_id"],)).fetchone()
+    if not audition["blind_review"]:
+        return full_user(musician)
     return anonymous_applicant(submission["id"], musician["instrument"])
 
 
@@ -93,8 +96,8 @@ def submission_summary(ctx, row, audition) -> dict:
     review = _review_for(ctx.db, row["id"])
     return {
         "id": row["id"], "audition_id": row["audition_id"], "musician": applicant_json(ctx, row),
-        "source": row["source"], "status": row["status"], "status_label": STATUS_LABELS[row["status"]],
-        "created": row["created"], "average": review["average"] if review else None,
+        "source": "recording" if audition["blind_review"] else row["source"], "status": row["status"], "status_label": STATUS_LABELS[row["status"]],
+        "created": "" if audition["blind_review"] else row["created"], "average": review["average"] if review else None,
         "reviewed": bool(review and review["average"] is not None),
         "feedback_shared": bool(review and review["feedback_shared"]),
         "callback": callback_json(row),
@@ -123,17 +126,21 @@ def list_submissions(ctx):
 
 @ROUTER.route("GET", "/api/submissions/<submission_id:int>")
 def submission_detail(ctx):
+    from .judging import director_review, composite
     submission, audition = owned_submission(ctx, ctx.params["submission_id"])
     review = _review_for(ctx.db, submission["id"])
     siblings = [r["id"] for r in ctx.db.execute("SELECT id FROM submissions WHERE audition_id=? ORDER BY created DESC", (audition["id"],))]
     position = siblings.index(submission["id"])
     return {"submission": {
         **submission_summary(ctx, submission, audition),
-        "note": submission["note"], "timestamps": load_list(submission["timestamps"]),
+        "note": "" if audition["blind_review"] else submission["note"],
+        "timestamps": [] if audition["blind_review"] else load_list(submission["timestamps"]),
         "audio_url": f"/api/submissions/{submission['id']}/audio",
         "has_audio": submission_media_path(ctx, submission) is not None,
         "duration": submission["duration_sec"],
-        "review": review_json(review) if review else None,
+        "review": director_review(review) if review else None,
+        "rubric": load_list(audition["rubric"]), "blind_review": bool(audition["blind_review"]),
+        "composite": composite(ctx.db, submission["id"]),
         "audition": {"id": audition["id"], "title": audition["title"], "ensemble": audition["ensemble"]},
         "position": position + 1, "total": len(siblings),
         "previous_id": siblings[position - 1] if position > 0 else None,
@@ -156,8 +163,11 @@ def submission_media_path(ctx, submission):
 def submission_audio(ctx):
     """Authorized recording stream with Range support, for an <audio> element. This is the only route to a submission's
     media: there are no thumbnails or posters, so a director has no still image of a blind applicant."""
-    submission, _ = owned_submission(ctx, ctx.params["submission_id"])
+    submission, audition = owned_submission(ctx, ctx.params["submission_id"])
     path = submission_media_path(ctx, submission)
     if not path:
         raise not_found("This submission's recording is not available (a seed clip may still be 'coming soon').")
+    if audition["blind_review"]:
+        from ..blind_audio import audio_only
+        return FileResponse(audio_only(path, ctx.settings), "audio/wav", "private, no-store")
     return FileResponse(path, cache="private, no-store")

@@ -18,8 +18,8 @@ class OpportunitySearchTests(ServerTestCase):
 
     def test_board_mixes_auditions_and_gigs(self):
         data = self.alex.json("GET", "/api/opportunities")[1]["opportunities"]
-        self.assertEqual({o["type"] for o in data}, {"audition", "gig"})
-        self.assertEqual(len(data), 11)
+        self.assertEqual({o["type"] for o in data}, {"audition", "gig", "grant", "residency", "college_audition", "summer_camp"})
+        self.assertEqual(len(data), 15)
         self.assertEqual([o["deadline"] for o in data], sorted(o["deadline"] for o in data))
 
     def test_filters(self):
@@ -29,9 +29,9 @@ class OpportunitySearchTests(ServerTestCase):
                          {"Sub Needed: Friday Night Trombone", "New Year's Eve Big Band Gala", "Sunday Brunch Quartet: Rotating Chairs"})
         self.assertEqual(len(self._titles("location=denver")), 5)
         self.assertEqual(len(self._titles("location=Denver%2C%20CO&type=gig")), 3)
-        self.assertEqual(len(self._titles("level=student")), 2)
-        self.assertEqual(len(self._titles("paid=0")), 3)
-        self.assertEqual(len(self._titles("paid=1")), 8)
+        self.assertEqual(len(self._titles("level=student")), 4)
+        self.assertEqual(len(self._titles("paid=0")), 5)
+        self.assertEqual(len(self._titles("paid=1")), 10)
         self.assertEqual(self._titles("video_round=1&type=audition&category=orchestral"), ["Violin: Section Seat, Second Violins"])
         self.assertEqual(self._titles("q=gala"), ["New Year's Eve Big Band Gala"])
         self.assertEqual(self._titles("q=bayview&paid=1"), ["Lead Tenor Saxophone: 2027 Season"])
@@ -40,7 +40,7 @@ class OpportunitySearchTests(ServerTestCase):
 
     def test_sorting_and_bad_filters(self):
         newest = self.alex.json("GET", "/api/opportunities?sort=newest")[1]["opportunities"]
-        self.assertEqual(len(newest), 11)
+        self.assertEqual(len(newest), 15)
         for query in ("sort=random", "type=party", "level=god", "paid=maybe", "deadline_before=soon", "category=pop"):
             status, data = self.alex.json("GET", f"/api/opportunities?{query}")
             self.assertEqual(status, 400, query)
@@ -86,14 +86,14 @@ class OpportunityWriteTests(ServerTestCase):
         status, data = elena.json("POST", "/api/auditions", {"title": "Viola", "deadline": "2026-12-20", "video_round_accepted": True})
         self.assertEqual(status, 201)
         audition = data["audition"]
-        self.assertEqual((audition["type"], audition["city"], "blind_review" in audition), ("audition", "Chicago", False))
+        self.assertEqual((audition["type"], audition["city"], "blind_review" in audition), ("audition", "Chicago", True))
         status, data = elena.json("PUT", f"/api/auditions/{audition['id']}", {"callback_date": "2027-02-01", "callback_location": "Hall"})
         self.assertEqual((status, data["audition"]["callback"]["location"]), (200, "Hall"))
         for value in (False, True):
             status, data = elena.json("PUT", f"/api/auditions/{audition['id']}", {"blind_review": value})
             self.assertEqual(status, 400)
-            self.assertIn("always on", data["error"])
-        self.assertEqual(elena.json("POST", "/api/auditions", {"title": "Cello", "deadline": "2026-12-20", "blind_review": False})[0], 400)
+            self.assertIn("immutable", data["error"])
+        self.assertEqual(elena.json("POST", "/api/auditions", {"title": "Cello", "deadline": "2026-12-20", "blind_review": False})[0], 201)
 
 
 class EnsembleTests(ServerTestCase):
@@ -108,7 +108,8 @@ class EnsembleTests(ServerTestCase):
         self.assertEqual(anon.json("GET", "/api/ensembles?category=pop")[0], 400)
         mile_high = [e for e in ensembles if e["name"].startswith("Mile High")][0]
         page = anon.json("GET", f"/api/ensembles/{mile_high['id']}")[1]["ensemble"]
-        self.assertEqual(page["director"]["name"], "Marcus Bell")
+        self.assertNotIn("director", page)
+        self.assertNotIn("Marcus Bell", str(page["roster"]))
         self.assertEqual(len(page["open_opportunities"]), 4)
         self.assertTrue(page["highlights"] and page["roster"] and page["founded"] and page["logo_initials"])
         self.assertNotIn("requirements", page["open_opportunities"][0])
@@ -116,7 +117,7 @@ class EnsembleTests(ServerTestCase):
 
     def test_only_the_director_edits_the_page(self):
         page_id = self.client().json("GET", "/api/ensembles")[1]["ensembles"][0]["id"]
-        owner = [e for e in self.client().json("GET", "/api/ensembles")[1]["ensembles"] if e["id"] == page_id][0]["director"]["handle"]
+        owner = [e for e in self.client("elena-voss").json("GET", "/api/ensembles")[1]["ensembles"] if e["id"] == page_id][0]["director"]["handle"]
         self.assertEqual(self.client("alex-chen").json("PUT", f"/api/ensembles/{page_id}", {"about": "x"})[0], 403)
         self.assertEqual(self.client().json("PUT", f"/api/ensembles/{page_id}", {"about": "x"})[0], 401)
         other = "elena-voss" if owner != "elena-voss" else "marcus-bell"
@@ -124,3 +125,17 @@ class EnsembleTests(ServerTestCase):
         status, data = self.client(owner).json("PUT", f"/api/ensembles/{page_id}", {"about": "New about", "roster": [{"name": "A B", "instrument": "Bass"}]})
         self.assertEqual((status, data["ensemble"]["about"], data["ensemble"]["roster"][0]["name"]), (200, "New about", "A B"))
         self.assertEqual(self.client(owner).json("PUT", f"/api/ensembles/{page_id}", {"roster": ["bad"]})[0], 400)
+
+    def test_musician_ensemble_and_gig_navigation_does_not_restore_directors(self):
+        musician = self.client("leo-marquez")
+        directors = self.client().json("GET", "/api/accounts")[1]["directors"]
+        for ensemble in musician.json("GET", "/api/ensembles")[1]["ensembles"]:
+            self.assertNotIn("director", ensemble)
+            detail = musician.json("GET", f"/api/ensembles/{ensemble['id']}")[1]["ensemble"]
+            self.assertNotIn("director", detail)
+            for director in directors:
+                self.assertNotIn(director["name"], str(detail["roster"]))
+        for opportunity in musician.json("GET", "/api/opportunities")[1]["opportunities"]:
+            self.assertNotIn("director", opportunity)
+            detail = musician.json("GET", f"/api/opportunities/{opportunity['id']}")[1]["opportunity"]
+            self.assertNotIn("director", detail)

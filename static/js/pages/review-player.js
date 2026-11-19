@@ -4,11 +4,11 @@
 (function () {
   const { esc, duration } = Tutti.util;
 
-  const placeholderTitle = (submission) => `${esc(submission.musician.label)} — audio only`;
+  const placeholderTitle = (submission) => `${esc(submission.musician.label || submission.musician.name)} — recording`;
 
   function tileMarkup(submission, badge) {
     const player = submission.has_audio
-      ? `<audio controls preload="metadata" src="${esc(submission.audio_url)}"></audio>`
+      ? `<${submission.blind_review ? "audio" : "video"} style="max-width:100%" controls preload="metadata" src="${esc(submission.audio_url)}"></${submission.blind_review ? "audio" : "video"}>`
       : '<p class="small muted">This recording is not available yet.</p>';
     return `<div class="audio-tile"><div class="audio-badge">${badge || ''}</div><div class="audio-icon" aria-hidden="true">🎧</div>
       <b>${placeholderTitle(submission)}</b>${player}</div>`;
@@ -25,7 +25,7 @@
   function mount(root, submission, { badge, getNotes, onTime }) {
     const tile = root.querySelector('.player-tile');
     tile.innerHTML = tileMarkup(submission, badge);
-    const audio = tile.querySelector('audio');
+    const audio = tile.querySelector('audio, video');
     const strip = root.querySelector('.marker-strip');
     const clipLength = () => (audio && Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : submission.duration || 0);
     const chapters = () => submission.timestamps.filter((c) => insideClip(c.time, clipLength()));

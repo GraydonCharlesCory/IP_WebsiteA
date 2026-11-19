@@ -4,8 +4,7 @@
    Page recipe:
      <div data-shell-header></div> ...page markup...
      Tutti.boot({ active: 'home', requireRole: 'musician' }).then((user) => { ...render... });
-   `active` is one of: home, students, orchestral, jazz, auditions (musician), dashboard (director),
-   discover, applications, teachers, messages. Tutti.setUnreadBadge(n) updates the Messages badge. */
+   `active` identifies Discovery, applications, dashboard, manage, schools, feed or teachers. */
 (function () {
   const { esc, SECTIONS } = Tutti.util;
   const { avatar, dot } = Tutti.components;
@@ -35,33 +34,23 @@
   }
 
   /* ---- Navigation ---- */
-  const landingFor = (user) => (user.role === 'director' ? 'director.html' : 'home.html');
+  const landingFor = () => 'discover.html';
 
   function navLinks(user) {
-    const links = [{ href: 'home.html', label: 'Home', key: 'home' }];
-    SECTIONS.forEach((s) => links.push({ href: `section.html?s=${s.key}`, label: s.label, key: s.key, dot: s.key }));
-    if (user && user.role === 'musician') links.push({ href: `section.html?s=${user.category}#auditions`, label: 'Auditions', key: 'auditions' });
+    const links = [{ href: 'discover.html', label: 'Discover', key: 'discover' }, {href:'students.html',label:'For Students',key:'students'}];
     if (user && user.role === 'director') links.push({ href: 'director.html', label: 'My auditions', key: 'dashboard' });
-    if (user) links.push({ href: 'discover.html', label: 'Discover', key: 'discover' });
-    if (user && user.role === 'musician') links.push({ href: 'applications.html', label: 'Applications', key: 'applications' });
+    if (user && user.role === 'musician') links.push({ href: 'applications.html', label: 'Auditions & applications', key: 'applications' });
+    if (user && ['director','school'].includes(user.role)) links.push({ href: 'manage.html', label: 'Manage opportunities', key: 'manage' });
+    links.push({ href: 'schools.html', label: 'Schools', key: 'schools' });
+    links.push({ href: 'feed.html', label: 'Community', key: 'home' });
     links.push({ href: 'teachers.html', label: 'Teachers', key: 'teachers' });
     return links;
   }
 
-  const myPageHref = (user) => (user.role === 'musician' ? `profile.html?h=${encodeURIComponent(user.handle)}` : 'director.html');
-
-  const ICON_MESSAGES = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>';
-
-  /* Show (or hide, when zero) the unread count on the top-bar Messages icon. */
-  function setUnreadBadge(count) {
-    const badge = document.getElementById('messagesBadge');
-    if (!badge) return;
-    badge.textContent = count > 99 ? '99+' : String(count);
-    badge.hidden = !(count > 0);
-  }
+  const myPageHref = (user) => (user.role === 'musician' ? `profile.html?h=${encodeURIComponent(user.handle)}` : user.role === 'school' ? 'schools.html' : 'director.html');
 
   function messagesMarkup(active) {
-    return `<a class="messages-link ${active === 'messages' ? 'on' : ''}" href="messages.html" title="Messages" aria-label="Messages">${ICON_MESSAGES}<span class="badge-count" id="messagesBadge" hidden>0</span></a>`;
+    return '<a class="btn btn-ghost" href="notices.html">Notices</a>';
   }
 
   function meMarkup(user) {
@@ -75,11 +64,26 @@
   function renderHeader(user, active) {
     const host = document.querySelector('[data-shell-header]') || document.body.insertAdjacentElement('afterbegin', document.createElement('div'));
     host.className = 'topbar';
-    host.innerHTML = `<div class="wrap">
+    document.body.classList.add('shell-ready');
+    host.innerHTML = `<a class="skip-link" href="#${document.getElementById('pageRoot') ? 'pageRoot' : 'content'}">Skip to content</a><aside class="sidebar">
       <a class="logo" href="${user ? landingFor(user) : 'index.html'}"><span class="logo-mark">${LOGO}</span>Tutti</a>
       <nav class="nav">${navLinks(user).map((l) =>
         `<a href="${l.href}" class="${l.key === active ? 'on' : ''}">${l.dot ? dot(l.dot) : ''}${esc(l.label)}</a>`).join('')}</nav>
-      <div class="spacer"></div>${user ? messagesMarkup(active) : ''}${meMarkup(user)}</div>`;
+      <div class="side-identity">${user ? `${avatar(user, 'sm')}<div>${esc(user.name)}<br><span class="muted small">${esc(user.role)}</span></div>` : 'A place for your next movement.'}</div></aside>
+      <header class="utility"><span>Tutti / ${esc(navLinks(user).find(l => l.key === active)?.label || 'Your workspace')}</span><div class="utility-actions"><button class="btn btn-ghost" id="themeButton" aria-label="Toggle light or dark appearance" type="button">Dark appearance</button>${user && user.role === 'musician' ? messagesMarkup(active) : ''}${meMarkup(user)}</div></header>`;
+    const themeButton = document.getElementById('themeButton');
+    const syncTheme = dark => {
+      document.body.classList.toggle('dark', dark);
+      themeButton.textContent = dark ? 'Light appearance' : 'Dark appearance';
+      themeButton.setAttribute('aria-pressed', String(dark));
+    };
+    try { syncTheme(localStorage.getItem('tutti-appearance') === 'dark'); }
+    catch (error) { console.error('Tutti appearance could not be restored; use the appearance button to change it.', error); }
+    themeButton.onclick = () => {
+      syncTheme(!document.body.classList.contains('dark'));
+      try { localStorage.setItem('tutti-appearance', document.body.classList.contains('dark') ? 'dark' : 'light'); }
+      catch (error) { reportError(new Error('Appearance changed for this page only. Browser storage is unavailable.'), 'save appearance'); }
+    };
   }
 
   /* ---- Account switcher ---- */
@@ -105,6 +109,7 @@
           const accounts = await api.accounts();
           menu.innerHTML = `<h4>Musicians</h4>${accounts.musicians.map((a) => accountButton(a, user)).join('')}
             <h4>Directors</h4>${accounts.directors.map((a) => accountButton(a, user)).join('')}
+            <h4>Schools</h4>${(accounts.schools || []).map((a) => accountButton(a, user)).join('')}
             <div class="foot"><a class="acct" href="${myPageHref(user)}"><span class="who"><b>${user.role === 'musician' ? 'View my profile' : 'My auditions'}</b></span></a><button class="acct" id="signOutButton"><span class="who"><b>Sign out</b></span></button></div>`;
           loaded = true;
         } catch (error) { return reportError(error, 'account list'); }
@@ -153,7 +158,6 @@
     }
     renderHeader(user, options.active);
     if (user) {
-      setUnreadBadge(user.unread_messages || 0);
       wireSwitcher(user);
     }
     const flash = sessionStorage.getItem('tutti-flash');
@@ -166,5 +170,4 @@
   Tutti.reportError = reportError;
   Tutti.landingFor = landingFor;
   Tutti.boot = boot;
-  Tutti.setUnreadBadge = setUnreadBadge;
 })();

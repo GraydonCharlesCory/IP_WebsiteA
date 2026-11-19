@@ -1,8 +1,10 @@
 """Public musician profiles (visible to everyone, even signed out) and editing your own."""
 from ..auth import require_role
+from ..demo_enrichment import musician_examples
 from ..validation import optional_text, parse_flag, string_list
 from . import ROUTER
 from .credibility import badges_for, endorsements_for
+from ..errors import bad_request
 from .lookups import get_musician_by_handle
 from .queries import clips_list, musicians_list, posts_list
 from .serializers import dumps, full_user
@@ -16,6 +18,9 @@ def list_musicians(ctx):
         people = [p for p in people if p["is_teacher"]]
     if ctx.query.get("instrument"):
         people = [p for p in people if ctx.query["instrument"].lower() in p["instrument"].lower()]
+    if ctx.query.get("q"):
+        terms = ctx.query["q"].lower().split()
+        people = [p for p in people if all(term in " ".join((p["name"], p["instrument"], p["location"].split(",")[0])).lower() for term in terms)]
     return {"musicians": [{**p, "badges": badges_for(ctx.db, p["id"])} for p in people]}
 
 
@@ -25,8 +30,8 @@ def musician_profile(ctx):
     clips = clips_list(ctx.settings, ctx.db, owner_id=musician["id"])
     posts = posts_list(ctx.settings, ctx.db, author_id=musician["id"], limit=50)
     return {"musician": full_user(musician), "clips": clips, "posts": posts,
-            "badges": badges_for(ctx.db, musician["id"]), "endorsements": endorsements_for(ctx.db, musician["id"]),
-            "stats": {"clips": len(clips), "posts": len(posts)}}
+            "badges": badges_for(ctx.db, musician["id"]), "connections": endorsements_for(ctx.db, musician["id"]),
+            "demo_enrichment": musician_examples(musician)}
 
 
 @ROUTER.route("PUT", "/api/me")
@@ -40,6 +45,19 @@ def update_profile(ctx):
     values["teacher_blurb"] = optional_text(data, "teacher_blurb", 1000) if "teacher_blurb" in data else user["teacher_blurb"]
     values["rate_text"] = optional_text(data, "rate_text", 200) if "rate_text" in data else user["rate_text"]
     values["instruments_taught"] = dumps(string_list(data, "instruments_taught")) if "instruments_taught" in data else user["instruments_taught"]
+    values["certifications"] = dumps(string_list(data, "certifications")) if "certifications" in data else user["certifications"]
+    if "education" in data:
+        items = data["education"]
+        if not isinstance(items, list) or len(items) > 30:
+            raise bad_request("Education must contain at most 30 school and degree entries.")
+        education = []
+        for item in items:
+            if not isinstance(item, dict) or not item.get("school_id") or not str(item.get("degree", "")).strip():
+                raise bad_request("Each education entry needs a school_id and degree.")
+            from .schools import get_school
+            school = get_school(ctx.db, item["school_id"])
+            education.append({"school_id": school["id"], "school": school["name"], "degree": str(item["degree"]).strip()[:160]})
+        values["education"] = dumps(education)
     assignments = ", ".join(f"{name}=?" for name in values)
     ctx.db.execute(f"UPDATE users SET {assignments} WHERE id=?", [*values.values(), user["id"]])
     ctx.db.commit()

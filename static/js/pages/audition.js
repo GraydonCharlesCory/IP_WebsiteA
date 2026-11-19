@@ -32,8 +32,8 @@
     const sec = section(audition.category);
     return `<section class="band"><div class="wrap">
       <div class="crumb"><a href="section.html?s=${esc(audition.category)}">${esc(sec.label)}</a> / <a href="section.html?s=${esc(audition.category)}#auditions">Auditions</a> / ${esc(audition.ensemble)}</div>
-      <div class="ens">${avatar(audition.director)}<div><b>${esc(audition.ensemble)}</b>
-        <div class="small muted">Posted by ${esc(audition.director.name)} · ${date(audition.created)}</div></div></div>
+      <div class="ens"><div><b>${esc(audition.ensemble)}</b>
+        <div class="small muted">Posted ${date(audition.created)}</div></div></div>
       <h1>${esc(audition.title)}</h1>
       <div class="tags">${categoryTag(audition.category)}${statusTag(audition.status)}${closing}</div>
       <div class="facts">
@@ -51,15 +51,14 @@
       `<div class="${i === firstUpcoming ? 'now' : ''}"><b>${esc(step.label)}</b><span>${date(step.date, { month: 'long', day: 'numeric', year: 'numeric' })}</span></div>`).join('');
     return `<div>
       <div class="sec"><h2>About the chair</h2><p>${esc(audition.description)}</p></div>
+      ${audition.demo_enrichment ? `<section class="sec demo-opportunity"><h2>Simulated opportunity example</h2><p class="small muted">Illustrative content only; not organizer requirements, eligibility or a schedule.</p><p>${esc(audition.demo_enrichment)}</p></section>` : ''}
       ${Tutti.auditionRound.roundSection(audition)}
       <div class="sec"><h2>What to submit</h2><p style="margin-bottom:14px">One MP4 clip with everything below.</p><ul class="req">${requirements}</ul></div>
       <div class="sec"><h2>Timeline</h2><div class="timeline">${timeline}</div></div></div>`;
   }
 
   function directorCard(audition) {
-    const d = audition.director;
-    return `<div class="card pad"><div class="eyebrow" style="margin-bottom:12px">Director</div>
-      <div style="display:flex;gap:12px;align-items:center">${avatar(d)}<div><b>${esc(d.name)}</b><div class="small muted">${esc(d.ensemble)}</div></div></div></div>`;
+    return `<div class="card pad"><h3>Review mode</h3><p>${audition.blind_review ? 'Blind: reviewers receive audio only, without your name, note or chapter labels. Do not speak identifying information in the recording.' : 'Nonblind: reviewers can see your profile identity and recording.'}</p><p class="small muted">Chosen by the organizer at creation; cannot change.</p></div>`;
   }
 
   function musicianCard(audition) {
@@ -69,7 +68,7 @@
     }
     return `<div class="card pad stack"><div class="eyebrow">Submissions close ${date(audition.deadline)}</div>${countdownMarkup(audition.deadline)}
       <button class="btn btn-primary btn-lg" id="openSubmit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Submit a clip</button>
-      ${privateNote(`Only ${audition.director.name} sees your submission. Scores and comments are private to the director.`)}</div>`;
+      ${privateNote('The creating organizer and scoped guest judges review your submission. Composite scores are private to the creator.')}</div>`;
   }
 
   function ownerCard(audition, submissions) {
@@ -78,7 +77,7 @@
     return `<div class="card pad stack"><div style="display:flex;justify-content:space-between;align-items:center">
         <div class="eyebrow">Submissions</div><span class="tag brass">${audition.submission_count} total</span></div>
       ${rows || '<p class="small muted">No submissions yet.</p>'}
-      <a class="btn btn-primary" href="director.html?audition=${audition.id}">Open submissions</a>
+      <a class="btn btn-primary" href="manage.html?audition=${audition.id}">Open submissions</a>
       ${privateNote('Only you can see these submissions.')}</div>`;
   }
 

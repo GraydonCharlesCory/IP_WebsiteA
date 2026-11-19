@@ -1,5 +1,7 @@
 """A musician's own applications: status, callback details and the feedback the director chose to share."""
 from ..auth import require_role
+from ..db import load_list
+from ..discovery import metadata
 from . import ROUTER
 from .ensemble_json import ensemble_brief
 from .serializers import opportunity_card, shared_feedback_json
@@ -14,7 +16,8 @@ def _application(conn, row) -> dict:
     return {
         "id": row["id"], "audition_id": audition["id"], "created": row["created"],
         "status": row["status"], "status_label": STATUS_LABELS[row["status"]],
-        "opportunity": opportunity_card(audition),
+        "opportunity": {**opportunity_card(audition), "instruments": load_list(audition["instruments"]),
+                        "description": audition["description"], **metadata(conn, audition["id"])},
         "ensemble": ensemble_brief(ensemble) if ensemble else {"id": None, "name": audition["ensemble"]},
         "callback": callback_json(row),
         "feedback": shared_feedback_json(review) if review and review["feedback_shared"] else None,

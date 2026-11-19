@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 SCHEMA_DIR = Path(__file__).with_name("schema")
-SCHEMA_VERSION = 2  # 1 = the v1 demo; 2 adds opportunities, ensembles, messaging, credibility
+SCHEMA_VERSION = 3
 
 
 def now_iso() -> str:
@@ -33,12 +33,13 @@ def init_schema(db_path: Path) -> None:
     conn = connect(db_path)
     try:
         has_tables = conn.execute("SELECT 1 FROM sqlite_master WHERE name='users'").fetchone()
-        if has_tables and conn.execute("PRAGMA user_version").fetchone()[0] < SCHEMA_VERSION:
-            raise SchemaOutOfDate(
-                f"{db_path} was created by an older version of Tutti. Start with `python3 run.py --reset` to rebuild the demo data."
-            )
+        if has_tables:
+            from .migration import migrate
+            migrate(conn, db_path)
         for schema_file in sorted(SCHEMA_DIR.glob("*.sql")):
             conn.executescript(schema_file.read_text())
+        from .migration import add_columns
+        add_columns(conn)
         conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         conn.commit()
     finally:

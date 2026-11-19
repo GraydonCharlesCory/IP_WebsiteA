@@ -18,7 +18,7 @@
       <aside class="card panel">
         <div class="ph"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Your evaluation</h3>${privateNote('Private to you')}</div></div>
         <div class="overall"><div class="big" id="avg"></div><div><b>Overall score</b><div class="small muted">Average of the criteria you score · auto-saved</div></div></div>
-        <div class="rub" id="rub"></div>
+        <p class="small muted">Creator-only composite: ${sub.composite ?? "Not scored"} (equal weight per reviewer).</p><div class="rub" id="rub"></div>
         <div class="cm"><div class="field"><label for="comments">Comments</label><textarea class="input" id="comments" style="min-height:150px"></textarea></div>
           <div id="notesRoot"></div></div>
         <div class="dec" id="decisionRoot"></div>
@@ -35,12 +35,13 @@
     const currentNotes = [...review.notes];
     const comments = document.getElementById('comments');
     comments.value = review.comments || '';
+    Tutti.voiceFeedback.mount(comments);
     let player = null;
     let feedbackUi = null;
     let timer = null;
 
     const getFields = () => ({ scores: onlyGiven(scoresUi.scores()), comments: comments.value, notes: currentNotes });
-    const scoresUi = Tutti.reviewScores.mount(document.getElementById('rub'), review.scores, () => { queueAutosave(); feedbackUi.refresh(); });
+    const scoresUi = Tutti.reviewScores.mount(document.getElementById('rub'), review.scores, () => { queueAutosave(); feedbackUi.refresh(); }, sub.rubric.map(key => [key, key.replaceAll("_", " ")]));
     function queueAutosave() {
       clearTimeout(timer);
       timer = setTimeout(() => save({ scores: getFields().scores, comments: comments.value }), AUTOSAVE_DELAY_MS);
@@ -81,7 +82,7 @@
     start((await api.submission(id)).submission);
   }
 
-  Tutti.boot({ active: 'dashboard', requireRole: 'director' })
+  Tutti.boot({ active: 'dashboard', requireAuth: true })
     .then(load)
     .catch((error) => showFailure(error, { title: error.status === 403 ? 'This submission is private' : 'This submission could not be loaded', backHref: 'director.html', backLabel: 'Back to my auditions' }));
 })();

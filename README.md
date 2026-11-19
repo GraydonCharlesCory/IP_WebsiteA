@@ -1,197 +1,84 @@
-# Tutti: "Hudl for musicians" (investor demo)
+# Tutti v3 — local musician opportunity demo
 
-Musicians post clips, find auditions and gigs on one board, and apply; directors find players, run blind reviews, move people to callback and share feedback. Musicians and directors can message each other.
-Local, offline-friendly demo: Python 3.9 standard library only, SQLite, plain HTML/CSS/JS. No pip, no npm, no build step.
+Python 3.9+ standard library, SQLite, plain HTML/CSS/JS. No package installation or build step. This folder changes v3 only; separate v1/v2 and mockups are untouched.
 
-## Run it
+## Run and test
 
 ```
-python3 run.py              # http://localhost:8000 ; creates data/tutti.db and seeds it on first run
-python3 run.py --port 8765  # another port
-python3 run.py --reset      # wipe data/ (database and uploads) and reseed
+python3 run.py --port 8000
+```
+
+Open http://localhost:8000 (loopback only).
+
+```
 python3 -m unittest discover -s tests
 ```
 
-`data/` is git-ignored. Uploaded profile clips go to `data/uploads/clips/`, submission videos to `data/uploads/submissions/`.
+Optional rendered role/privacy checks use an already installed Playwright module and Chrome, without installing anything:
 
-## v2 features (backend)
-
-1. **Opportunity board**: auditions and gigs in one searchable list (`/api/opportunities`), plus public ensemble pages (`/api/ensembles`).
-2. **Video pre-screen**: an audition can accept video and carry callback date/place; the director moves a submission to `callback` with a message.
-3. **Blind review (always on)**: directors listen to audio only (no video picture, thumbnail or photo) and always see an anonymous "Applicant A-n", in every status (callback and accepted included). There is no switch to turn it off and no reveal.
-4. **Application status and feedback**: `submitted → shortlisted → callback → not_selected`; the musician sees status and, only when the director shares it, scores and comments (`/api/my/applications`).
-5. **Credibility**: verified badges (union, school, ensemble) and endorsements from directors and teachers.
-6. **Jazz gigs and sub lists**: gigs with date, venue, pay and the 3 M's (Money, Musicians, Music); musicians mark availability; the posting director sees the sub list.
-7. **Direct messaging** with an unread count in `/api/me`.
-8. **Teachers**: musicians can list lessons and clinics (`/api/teachers`).
-
-## Demo accounts (every password is `demo`)
-
-| Role | Name | Email | Section |
-|---|---|---|---|
-| Musician | Leo Marquez (tenor sax) | leo.marquez@tutti.demo | Jazz |
-| Musician | Dana Brooks (tenor sax) | dana.brooks@tutti.demo | Jazz |
-| Musician | Aiko Nakamura (violin) | aiko.nakamura@tutti.demo | Orchestral |
-| Musician | Maya Okafor (cello) | maya.okafor@tutti.demo | Orchestral |
-| Musician | Jordan Wells (trumpet) | jordan.wells@tutti.demo | Students |
-| Director | Dr. Rhonda Holloway, Bayview Jazz Orchestra | rhonda.holloway@tutti.demo | Jazz |
-| Director | Elena Voss, Lakeshore Symphony | elena.voss@tutti.demo | Orchestral |
-| Director | Priya Raman, Bay Area Youth Jazz All-Stars | priya.raman@tutti.demo | Students |
-| Musician | Adam Reyes (violin, AFM Local 802) | adam.reyes@tutti.demo | Orchestral |
-| Musician | Ronald Pierce (Denver jazz trombone, teacher) | ronald.pierce@tutti.demo | Jazz |
-| Musician | Alex Chen (college guitarist) | alex.chen@tutti.demo | Students |
-| Musician | Sofia Lindgren (violin) | sofia.lindgren@tutti.demo | Orchestral |
-| Director | Marcus Bell, Mile High Jazz Collective (Denver) | marcus.bell@tutti.demo | Jazz |
-| Director | Naomi Castellanos, Rocky Mountain Chamber Orchestra (Denver) | naomi.castellanos@tutti.demo | Orchestral |
-| Director | Prof. Tomás Ibarra, Front Range University Jazz Ensemble (Boulder) | tomas.ibarra@tutti.demo | Students |
-
-The sign-in page has "Sign in as musician" / "Sign in as director" one-click buttons (Leo / Dr. Holloway). The top-bar avatar opens the **account switcher**: one click to any account, grouped Musicians / Directors. "Sign in with Apple" only shows a "not available in the demo" toast.
-
-## Demo flow
-
-1. Sign in as a musician (Jordan Wells, say), open an audition (Honors Jazz Combo), submit a clip (pick an MP4 from `demo-uploads/` in the file picker, or choose a profile clip). Optionally open your own profile and use "Upload a clip" the same way.
-2. Open the account switcher and switch to that audition's director (Priya Raman).
-3. Open "My auditions", then the new submission: listen (audio only, applicant anonymous), score the five criteria, add comments and timestamped notes, shortlist or pass; moving a scored submission to callback keeps the applicant anonymous and sends them the details. Use "Message applicant" to contact them without learning who they are.
-4. Switch to another director or back to the musician: they cannot see the submission's scores, comments or video (the musician only sees "Submitted").
-
-Dr. Holloway's audition already has two submissions (Leo: new; Dana: scored and shortlisted; both appear as "Applicant A-n"), so the dashboard is not empty.
-
-### What each v2 account shows
-
-| Feature | Sign in as | What to see |
-|---|---|---|
-| Discovery | Alex Chen | `GET /api/opportunities` lists 6 auditions and 5 gigs; filter by `location=Denver`, `paid=0`, `level=college`, `video_round=1`. Six ensemble pages are public. |
-| Video pre-screen + callback | Leo Marquez / Dr. Holloway | Lead Tenor audition accepts video and has callback 2026-12-10 at Bayview Hall. Dr. Holloway can set Leo to `callback`. |
-| Blind review | Elena Voss | The Lakeshore violin audition: Sofia (scored, not selected) and Adam (scored, callback) both appear only as "Applicant A-n". Playback is audio only (`GET /api/submissions/<id>/audio`). |
-| Callback + shared feedback | Adam Reyes | `my/applications`: Lakeshore application at `callback` with a message, plus shared scores (average 8.6) and comments; his private timestamped note is not shared. |
-| Not selected, feedback private | Sofia Lindgren | Application `not_selected`, `feedback: null` (Elena has scored but not shared). |
-| Shortlisted, unshared | Dana Brooks | v1 scenario: shortlisted with a score the director has not shared. |
-| Credibility | Adam, Ronald | Verified "AFM Local 802" / "AFM Local 20-47" badges and endorsements on `GET /api/musicians/<handle>`. |
-| Gigs, 3 M's, sub list | Ronald Pierce, Marcus Bell | Three Denver paid gigs. Ronald has marked availability; Marcus sees `GET /api/gigs/<id>/availability`. |
-| Messaging | Adam, Alex, Marcus, Leo | Each has a thread with an unread message (`unread_messages` in `/api/me`). |
-| Teachers | anyone | `GET /api/teachers` lists Ronald (trombone, clinics) and Maya (cello). |
-
-## Live demo: test folder
-
-`demo-uploads/` holds sample performances for the live demo. In the musician's "Submit a clip" dialog (audition page) or the "Upload a clip" dialog (own profile, `profile.html?h=<your handle>`; hidden for other viewers), choose a file from that folder. Drop your own MP4s there too.
-
-`my-clips/` ships with openly licensed sample clips (credits in `my-clips/CREDITS.md`). Replace any of them with your own by keeping the file name. `python3 run.py --reset` only wipes `data/`; it keeps both `my-clips/` and `demo-uploads/` (covered by `tests/test_reset.py`).
-
-## Seed clips: `my-clips/`
-
-Seed profile clips point at fixed file names in `my-clips/` (full list in `my-clips/README.md`). Drop an MP4 with that name there and refresh; until then the UI shows a "Clip coming soon" tile. MP4s are git-ignored.
-
-## Visibility rules (enforced on the server, covered by tests)
-
-- Anyone, even signed out: musician profiles (with badges and endorsements), profile clips, posts, section feeds, the teacher list, **ensemble list and pages** (including a short card for each of the ensemble's open opportunities; full details need sign-in).
-- Signed in: the opportunity board and opportunity details (auditions and gigs). This keeps v1's rule; only ensemble pages are public for credibility. Only musicians submit and mark availability; only directors post/edit opportunities (their own).
-- Only the director who posted an audition may list its submissions, play submission audio, read or write scores and comments, change status and share feedback. Anyone else gets 403 (401 if signed out). Submission media is only served by `GET /api/submissions/<id>/audio`, never from a public path. There are no thumbnail, poster or still-frame routes.
-- **Musicians see** their own application status and callback details. They see scores and comments **only after the director shares feedback** for that submission, and the director's private timestamped notes only if the director also chose `include_notes`. Everything else about the review stays private.
-- **Blind review is always on** (no flag, setting or request parameter can change it; a request carrying `blind_review` gets 400). Every director-facing API (list, detail, audio) returns the applicant as `{name: "Applicant A-<submission id>", label, handle: null, id: null, anonymous: true, initials: "?", avatar_style: 0, location: ""}` plus the instrument, and the submission detail never includes the applicant's profile clips. The label is stable. **There is no reveal:** identity stays hidden in every status (submitted, shortlisted, callback, not selected), on every audition including seed data, and no endpoint, field or flag exposes it (the old `identity_revealed` field is gone). A callback still needs the submission to be scored first (400 otherwise). One server helper builds the anonymous applicant (`anonymous_applicant` in `server/api/serializers.py`) and is used by submissions and messaging. **Messaging:** a director sees any musician in a conversation as `Applicant C-<conversation id>`, with `id`/`handle` null, and the musician's `sender_id` is null in messages; a director starts a conversation with an applicant by sending only `submission_id` (the server finds the musician), and a director's responses (start, list, detail) never carry the conversation's audition or submission link, so a musician found by `user_id` cannot be tied to an audition; the musician keeps the link. Not covered: public musician profiles, feeds, the demo account switcher (`/api/accounts`), public ensemble rosters and a gig's sub list (gig availability is not an audition submission) still name musicians. Limit: the applicant's free-text note is shown as submitted, so applicants should not put their name in it, and the audio route streams the submitted MP4 file (the browser plays only its audio; the server cannot strip the video track without extra tools).
-- **Times stay inside the clip**: each clip's real length is read from its MP4 header when it is seeded or uploaded (`clips.duration_sec`, `submissions.duration_sec`). Chapter times at submit and review notes must lie within `0..duration` (400 otherwise, naming the clip length); the review player hides anything outside the clip. If a length cannot be read (missing or unreadable file) only negative times are refused.
-- Conversations: only the two participants can read, write or mark read; anyone else gets 403 (401 signed out).
-- Sub lists: only the director who posted the gig sees who marked availability; a musician sees only their own mark.
-- Endorsements: only directors and teachers (musicians with `is_teacher`) can write them, never for themselves. Self-claimed badges are never "verified by Tutti".
-
-## Data model (SQLite, `server/schema/*.sql`, schema version 2)
-
-`users` (role musician|director, name, handle, email, password_hash, category students|orchestral|jazz, instrument, ensemble, bio, location, avatar_style 1-6, **is_teacher, teacher_blurb, instruments_taught[], rate_text**) ·
-`sessions` · `clips` (owner, title, file, source library|upload, category, instrument; several clips may point at one media file) ·
-`posts` (author, category, body, optional clip) ·
-**`ensembles`** (director, name, category, city, state, about, founded, season, highlights[], roster[{name,instrument}], logo_initials, logo_color) ·
-`auditions` (holds auditions **and gigs**: director, ensemble_id, **type audition|gig**, category, title, ensemble name, instruments[], description, requirements[], timeline[{label,date}], deadline YYYY-MM-DD, status open|closed, **city, state, level student|college|semi-pro|pro, paid, pay_text, video_round_accepted, callback_date, callback_location**) ·
-**`gig_details`** (gig, gig_date, start_time, venue, money/musicians/music rating 1-5 + note) · **`gig_availability`** (gig, musician, available|maybe|unavailable) ·
-`submissions` (audition, musician, source upload|clip, file / clip, note, timestamps[{time,label}], duration_sec, **status submitted|shortlisted|callback|not_selected, callback_date, callback_location, callback_message**; one per musician per audition) ·
-`reviews` (submission, tone, rhythm, technique, musicality, preparation each 1-10, average, comments, notes[{time,text}], decision shortlist|pass, **feedback_shared, feedback_includes_notes, feedback_shared_at**) ·
-**`badges`** (user, kind union|school|ensemble, label, verified_by_tutti) · **`endorsements`** (musician, author, relationship, text) ·
-**`conversations`** (one per pair of users; optional linked audition/gig and submission) · **`messages`** (conversation, sender, body, read_at).
-Lists are stored as JSON text. Review criteria: Tone, Rhythm, Technique, Musicality, Preparation.
-v1 status names map: `new → submitted`, `passed → not_selected` (v1 names are still accepted in `?status=` filters). A review decision `shortlist`/`pass` sets `shortlisted`/`not_selected` only when the decision changes, so an auto-save never undoes a callback.
-A `data/` folder made by v1 is refused with a message to run `python3 run.py --reset`.
-
-## API
-
-JSON under `/api/`. Errors are always `{"error": "plain-language message"}` with an HTTP status: 400 bad input, 401 not signed in, 403 not allowed, 404 not found, 405 wrong method, 409 duplicate/closed, 413 file too big, 416 bad range. Session is the `tutti_session` cookie (HttpOnly); `fetch` with the default same-origin credentials sends it. `video_url` / `available` on clips: `available` is false when the MP4 is missing, so render a "Clip coming soon" tile.
-"Who" below: **public**, **user** (any signed-in), **musician**, **director**, **owner** (the director who posted the audition).
-
-Brief user object: `{id, role, name, handle, category, instrument, ensemble, initials, avatar_style, is_teacher}`. Full adds `bio, location, teaching: {blurb, instruments[], rate}|null`; `/api/me` and sign-in add `email` and `unread_messages` (top-bar badge).
-Clip: `{id, title, category, instrument, created, video_url, available, owner?}`. Post: `{id, category, body, created, author, clip|null}`.
-Opportunity card (lists, ensemble pages): `{id, type: "audition"|"gig", category, title, ensemble, ensemble_id, deadline, status, city, state, location: "Denver, CO", level, paid, pay, video_round_accepted}`.
-Opportunity (a card plus): `{instruments[], description, requirements[], timeline[], created, director, callback: {date, location}|null, ensemble_info: {id, name, category, city, state, location, logo_initials, logo_color}|null, gig: {date, start_time, venue, three_ms: {money|musicians|music: {rating 1-5|null, note}}}|null}` plus, for musicians, `my_submission: {id, status, status_label, created}|null` (auditions) or `my_availability: "available"|"maybe"|"unavailable"|null` (gigs); for the owner `owned_by_me: true` and `submission_count` (auditions) or `available_count` (gigs).
-`GET/POST/PUT /api/auditions…` (v1 addresses) answer `{audition}`/`{auditions}`; the same functions at `/api/opportunities…` answer `{opportunity}`/`{opportunities}`. `/api/auditions` lists auditions only.
-Statuses are keys `submitted | shortlisted | callback | not_selected` with a `status_label` ("Submitted", "Shortlisted", "Callback", "Not selected").
-Error responses to expect: 400 for bad filters or bodies, with the allowed values in the message.
-
-| Method + path | Who | Request | Response |
-|---|---|---|---|
-| GET `/api/me` | public | | `{user: {...,email}|null}` |
-| GET `/api/accounts` | public (demo) | | `{musicians:[user], directors:[user]}` (with `email`) |
-| POST `/api/sign-in` | public | `{email, password}` | `{user}` + cookie; 401 on mismatch |
-| POST `/api/sign-in-as` | public (demo) | `{role: "musician"\|"director"}` | `{user}` + cookie |
-| POST `/api/switch` | public (demo) | `{user_id}` | `{user}` + new cookie |
-| POST `/api/sign-out` | public | | `{ok:true}` |
-| GET `/api/sections` | public | | `{sections:[{key,label,blurb,musicians,auditions}]}` |
-| GET `/api/sections/<students\|orchestral\|jazz>` | public | `?limit=` | `{section, musicians[], posts[], clips[], auditions[]|null}` (`auditions` is null when signed out) |
-| GET `/api/feed` | public | `?category=&limit=` | `{posts[]}` newest first |
-| GET `/api/clips` | public | `?category=&limit=` | `{clips[]}` with `owner` |
-| GET `/api/musicians` | public | `?category=&teacher=1&instrument=<text>` | `{musicians[]}` each with `badges[]` |
-| GET `/api/musicians/<handle>` | public | | `{musician, clips[], posts[], badges[], endorsements[], stats:{clips,posts}}` |
-| PUT `/api/me` | musician | `{bio?, instrument?, location?, is_teacher?, teacher_blurb?, instruments_taught?[], rate_text?}` | `{user}` |
-| POST `/api/posts` | musician | `{body, category?, clip_id?}` (clip must be yours) | 201 `{post}` |
-| POST `/api/clips?title=&instrument=` | musician | raw MP4 body, `Content-Type: video/mp4` | 201 `{clip}` |
-| GET `/api/opportunities` | user | `?q=` (title, ensemble, description, instruments, city) `&category=&type=audition\|gig&instrument=<text>&location=<city or state text>&level=student\|college\|semi-pro\|pro&paid=1\|0&video_round=1\|0&deadline_before=YYYY-MM-DD&status=open\|closed&mine=1&sort=deadline\|newest` | `{opportunities[]}`; default order: open first, soonest deadline |
-| GET `/api/opportunities/<id>` | user | | `{opportunity}` |
-| POST `/api/opportunities` | director | as POST `/api/auditions` plus `type: "audition"\|"gig"` and, for gigs, `gig: {date, start_time?, venue, money?, musicians?, music?}` (each M is `{rating 1-5, note}`) | 201 `{opportunity}` |
-| PUT `/api/opportunities/<id>` | owner | same fields, all optional | `{opportunity}` |
-| GET `/api/ensembles` | public | `?category=&q=` | `{ensembles:[{id,name,category,city,state,location,logo_initials,logo_color,about,founded,season,director,open_opportunity_count}]}` |
-| GET `/api/ensembles/<id>` | public | | `{ensemble:{...above, highlights[], roster[{name,instrument}], open_opportunities:[opportunity card]}}` |
-| PUT `/api/ensembles/<id>` | owner (its director) | `{about?, season?, city?, state?, highlights?[], roster?[{name,instrument}]}` | `{ensemble}` |
-| GET `/api/teachers` | public | `?instrument=<taught>&q=` | `{teachers[]}` (full user with `teaching`, plus `badges[]`) |
-| PUT `/api/gigs/<id>/availability` | musician | `{status: "available"\|"maybe"\|"unavailable"}` (replaces earlier mark; 400 for auditions) | `{availability:{gig_id,status}}` |
-| GET `/api/gigs/<id>/availability` | owner (gig's director) | | the sub list: `{gig:{id,title}, available[], maybe[], unavailable[]}` of users with `location` and `marked` |
-| GET `/api/my/applications` | musician | | `{applications:[{id,audition_id,created,status,status_label,opportunity:card,ensemble:{id,name,...},callback:{date,location,message}\|null,feedback:{average,scores,comments,shared_at,notes:null\|[{time,text}]}\|null}]}` newest first |
-| PUT `/api/submissions/<id>/status` | owner | `{status: "submitted"\|"shortlisted"\|"callback"\|"not_selected", callback_date?, callback_location?, message?}`; `callback` needs a date, place or message (the audition's callback date/place fill in gaps); other statuses clear callback details | `{submission}` (same as detail) |
-| PUT `/api/submissions/<id>/feedback` | owner | `{shared: true\|false, include_notes?: true\|false}`; sharing needs a score or a comment (400 otherwise) | `{submission}` |
-| POST `/api/musicians/<handle>/endorsements` | director or teacher | `{text, relationship?}` (not for yourself) | 201 `{endorsement:{id,text,relationship,created,author}}` |
-| POST `/api/me/badges` | musician | `{kind: "union"\|"school"\|"ensemble", label}` (always unverified) | 201 `{badge:{id,kind,label,verified_by_tutti}}`; 409 duplicate label |
-| GET `/api/conversations` | user | | `{conversations:[{id,other:user,context:{opportunity:{id,title}\|null,submission_id},last_message,unread_count,updated}], unread_total}` newest activity first |
-| POST `/api/conversations` | user | `{user_id, body?, audition_id?, submission_id?}`: opens (or returns) your single conversation with that user; `submission_id` must be your own submission or one sent to your audition; a director sends `submission_id` instead of `user_id` and never learns who the musician is (the other party is an anonymous applicant) | 201 (new) or 200 `{conversation}` |
-| GET `/api/conversations/<id>` | participants | | `{conversation, messages:[{id,sender_id,body,created,read,mine}]}`; does not mark read |
-| POST `/api/conversations/<id>/messages` | participants | `{body}` | 201 `{message}` |
-| POST `/api/conversations/<id>/read` | participants | | `{ok:true, unread_total}` (marks the other person's messages read) |
-| GET `/api/auditions` | user | same filters as `/api/opportunities`, always `type=audition` | `{auditions[]}` |
-| GET `/api/auditions/<id>` | user | | `{audition}` (works for gigs too) |
-| POST `/api/auditions` | director | `{title, deadline, category?, ensemble?, description?, instruments[], requirements[], timeline[{label,date}], status?, level?, paid?, pay_text?, city?, state?, video_round_accepted?, callback_date?, callback_location??}`; category, ensemble name, city and state default from the director's ensemble; `level` defaults to `pro`; `deadline`/`callback_date` are YYYY-MM-DD | 201 `{audition}` |
-| PUT `/api/auditions/<id>` | owner | same fields, all optional; `blind_review` is refused (400): blind review is always on; `type` cannot change | `{audition}` |
-| POST `/api/auditions/<id>/submissions` | musician | JSON `{clip_id, note?, timestamps?[{time,label}]}` **or** raw MP4 body with `?note=&timestamps=<url-encoded JSON>` | 201 `{submission:{id,audition_id,status:"submitted",status_label,created}}`; 409 if closed, a gig, or already submitted |
-| GET `/api/my/submissions` | musician | | v1 list: `{submissions:[{id,audition_id,audition_title,ensemble,status,status_label,created}]}` (never scores or comments) |
-| GET `/api/director/dashboard` | director | | `{director, kpis:{open_auditions,closing_this_week,total_submissions,new_submissions (= submitted),awaiting_review,reviewed,average_score}, auditions[], gigs[]}`; each audition adds `submission_count,new_count,shortlisted_count,reviewed_count,average_score` |
-| GET `/api/auditions/<id>/submissions` | owner | `?status=submitted\|shortlisted\|callback\|not_selected\|reviewed` (v1 `new`/`passed` accepted) | `{audition:{id,title,ensemble}, submissions:[{id,audition_id,musician,source,status,status_label,created,average,reviewed,feedback_shared,callback}]}`; `musician` is always anonymous |
-| GET `/api/submissions/<id>` | owner | | `{submission:{...summary, note, timestamps[], audio_url, has_audio, duration, musician, review|null, audition, position, total, previous_id, next_id}}`; `review` also has `feedback_shared, feedback_includes_notes`; `musician` always anonymous (`musician_clips` empty) |
-| GET `/api/submissions/<id>/audio` | owner | optional `Range` header | the recording for an `<audio>` element (200/206) |
-| PUT `/api/submissions/<id>/review` | owner | `{scores?:{tone,rhythm,technique,musicality,preparation}, comments?, notes?[{time,text}], decision?: "shortlist"\|"pass"\|null}`; only sent fields change (safe for auto-save) | `{review:{scores,average,comments,notes,decision,updated}, status}`; `average` = mean of the scores given, 1 decimal |
-| GET `/media/clips/<file>` | public | optional `Range` | seed clip from `my-clips/` (206 supported; 404 "coming soon" if missing) |
-| GET `/media/uploads/<file>` | public | optional `Range` | an uploaded profile clip |
-
-Uploads are streamed to disk in chunks; limit 500 MB; the body must be `video/mp4` and start with an `ftyp` box.
-
-## Front-end shell (for page authors)
-
-Pages live in `static/` and are served at the site root (`/home.html`) with assets under `/static/`. Placeholders exist for `home`, `section` (`section.html?s=students|orchestral|jazz`), `profile` (`profile.html?h=<handle>`), `audition` (`?id=`), `director`, `review` (`?id=<submission id>`).
-Dialogs: "Submit a clip" (`submit-dialog.js`, audition page) and "Upload a clip" (`upload-clip-dialog.js`, own profile); both share `dialog-parts.js` (scrim, MP4 drop zone, file checks) and `submit-dialog.css`.
-
-Include, in this order: `/static/css/fonts.css`, `app.css`, `shell.css`; scripts `api.js`, `util.js`, `components.js`, `shell.js`; add `<div data-shell-header></div>` at the top of `<body>`; then:
-
-```js
-Tutti.boot({ active: 'home', requireAuth: true, requireRole: 'musician' }).then((user) => { /* render */ });
+```
+PLAYWRIGHT_MODULE=/path/to/installed/playwright CHROME_EXECUTABLE="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node tests/render_workflows.cjs
 ```
 
-- `api.*` (api.js): one function per endpoint above (`api.musician(handle)`, `api.submitUpload(id, file, meta, onProgress)`, `api.saveReview(id, review)` ...). Errors reject with `Error{status, message}`.
-- `Tutti.util`: `esc, section, duration(secs), parseTime("2:14"), date, timeAgo, daysUntil, queryParam`.
-- `Tutti.components`: `avatar(user,size), categoryTag(key), dot(key), statusTag(status), videoTile(clip,{big,badge,src}), clipCard(clip), placeholderTile(title), wire(root)`. After inserting `videoTile` HTML call `Tutti.components.wire(container)`; tiles show the real first frame and play on click, and a "Clip coming soon" tile if the file is missing. For a submission video use `videoTile({title}, {src: api.submissionVideoUrl(id), big: true})`.
-- `Tutti.toast(msg, 'error'|'ok')`, `Tutti.reportError(error)` (toast + console), `Tutti.landingFor(user)`.
-- Fonts (Fraunces, Inter; SIL OFL) are self-hosted in `static/fonts/`.
+The check creates fresh data and an isolated browser profile in the temporary directory, starts a loopback-only server on an allocated port, and closes both afterward. Set `RENDER_ARTIFACT_DIR` to retain the screenshot outside temporary-job cleanup.
 
-## Layout
+Blind playback uses macOS's installed `/usr/bin/afconvert`. The server validates decoded PCM and writes a fresh metadata-free WAV containing audio samples only. If decoding is unavailable or fails, playback fails closed with an actionable error and server log, never the source MP4. Real-media regression tests use the licensed sample recordings in `my-clips/`; see its credits file.
 
-`run.py` · `server/` (app.py handler, router.py, context.py, auth.py, media.py, db.py, schema/ SQL split by area, seed*.py split by area, api/ one module per resource) · `static/` · `tests/` · `my-clips/`.
+## Demo roles and walkthrough
+
+All demo account passwords are `demo`; the avatar opens the account switcher.
+
+- Musician: `leo.marquez@tutti.demo`, `adam.reyes@tutti.demo`, or `jordan.wells@tutti.demo`.
+- Director: `rhonda.holloway@tutti.demo`, `elena.voss@tutti.demo`, or `priya.raman@tutti.demo`.
+- School: `lakefront.school@tutti.demo` or `prairie.school@tutti.demo`.
+
+1. **Discovery is home.** Find auditions, gigs, grants, residencies, high-school college auditions and summer camps. Filter by instrument, location, audience and opportunity type. Separate Jazz/Orchestral/Student navigation tabs are gone; their useful opportunities remain. Community posts/clips, teachers, ensemble pages, gig availability and the three M's remain.
+2. **Applications** combines submitted applications and opportunities not yet applied to. Both tabs search title, ensemble, instrument and location, with instrument/location filters. On Applications and Discovery, **Genre keywords** searches existing title, ensemble and description text, not a dedicated genre taxonomy or the Jazz/Orchestral/Students section labels. Audition requirements, timelines, status and callback details remain. Musicians never receive applicant counts, review scores or composites, including in shared feedback.
+3. **Manage opportunities** lets directors and schools create auditions and application opportunities. Choose blind/nonblind at creation; it cannot change afterward, including via the API or database update. Configure 1–12 rubric criteria; rubrics freeze with the first application.
+4. Open **Submissions & administration**, then a review. Blind reviews hide identity, profile, video, original filenames, applicant free text, chapters and submission timestamps. Nonblind reviews show identity/video. Musician-facing audition pages never list individual directors.
+5. Create a scoped guest link in administration. Guests can play and score only submissions in that opportunity, and see only their own scores. Each reviewer's criterion mean has equal weight in the composite; only the creating account sees the composite. Revocation blocks future access but retains prior scores for the audit record. Shared feedback contains written comments and optionally director notes, never scores/composites.
+6. Directors can type feedback or explicitly start browser-supported speech recognition. Unsupported browsers retain typed input and explain the fallback. Microphone permission and a working browser recognition service are required; recognition may use the browser vendor's online service. This demo does not promise offline transcription.
+7. Two-way musician/director chat UI and APIs are removed. Administration provides one-way messages to one selected applicant, bulk announcements, and one-click confirmation/rejection templates. Select an applicant by their displayed label (anonymous for blind auditions); only that applicant receives the individual notice. The recipient selection clears after sending. **Assumption:** “do it all” means both in-app notices and email capability. Email is a LOCAL simulated outbox only: no SMTP, real delivery, paid services or external email connection. Old conversation records remain stored but inaccessible through the removed APIs.
+8. Edit a musician profile for instrument, location, multiple schools/degrees and certifications. Education links to school pages. Professional connections describe working relationships, not advertising or independently verified recommendations; existing relationship records are retained.
+9. Search the school directory by name or location, then explore a school's banner, overview, programs/activities and alumni tabs. School accounts manage only their owned school pages, programs, activities and alumni connections, and post opportunities for that school. Other accounts cannot edit those pages. Schools are fictional demo institutions, not real affiliations.
+
+The workspace uses local Fraunces/Inter fonts and ivory/sage/sand colors. The appearance button switches between light and dark and remembers the choice in browser storage. Community retains its greeting, open auditions and trending clips; only the section-definition row is removed.
+
+No new deadline-prioritized dashboard is included; that remains future scope.
+
+Applications, For Students, Schools and Find musicians include U.S. region and curated major-city filters alongside location text. All selected constraints combine with existing search filters; smaller/international places remain reachable using All regions/All cities and location text. See [geographic matching policy, catalog coverage and limitations](docs/location-search.md).
+
+### Simulated profile and school detail
+
+Musician headers show education/degrees and certifications instead of clip/post counts; public profile responses no longer include the unused `stats` totals. Authored education links still open the corresponding school, and credentials are not repeated in the sidebar.
+
+Normal profile/school/opportunity reads automatically supply a **read-only simulated overlay** for known fictional seeds, including already-populated databases. No reset, migration, posting or new workflow is needed. Stored authored credentials, school details, alumni, requirements, timelines, applications and files are never replaced. Example credentials are separate from editable/verified credentials; a nonempty education or certification list suppresses that category's examples. School Posts appear immediately below At a glance on Overview, with two labelled sample updates per seed school. Alumni examples have their own illustrative section and disappear when real alumni links exist; they are not stored links and cannot be removed as if they were. Examples never reuse an account name or handle, so removing a real connection never resurrects that person as an example.
+
+The exact inventory is in `server/demo_enrichment.py`: nine musician education/program examples and nine certificate examples (including issuer, study area, year and completion/in-progress status); two school updates each for Lakefront and Prairie; four anonymous illustrative graduate pathways (two per school), with no account identity, profile link or endorsement; and four school-opportunity preparation/overview examples for the project grant, residency, college entrance audition and summer chamber camp. Each displayed example is labelled simulated, fictional and/or illustrative, never verified. These are invented credentials/affiliations, not claims about real people or institutions. Preparation examples never alter actual requirements, eligibility, filters, deadlines, review mode or submission logic; an authored requirement list or edited original description suppresses them.
+
+Qualification requires the original demo handle, name, email, role, category and ensemble; school examples also require the original school name and owner relationship. Other/custom identities receive no examples. This is conservative content matching, not a historical provenance ledger: an exact recreation of an original seed identity is indistinguishable from that seed, and an intentionally cleared list can show a separate simulated fallback again. Renaming a seed identity/school disables its overlay. Existing verified/self-claimed badges remain distinct and unchanged. These examples are local demo displays only: no real posts, email, registration, messaging, follows, payments or external publishing.
+
+## Privacy and demo boundaries
+
+Recordings referenced by blind applications are restricted to their owning musician on raw clip/upload routes; reviewers and guests must use scoped sanitized audio. Unrelated public/community recordings remain playable without signing in. Previously downloaded public media cannot be recalled. Scoped nonblind reviews retain video. Musician-facing ensemble pages omit director cards and director roster entries; gig pages likewise omit individual director cards.
+
+Audio can itself contain spoken names or recognizable performances: software cannot guarantee anonymity against that content or outside knowledge. Directors remain responsible for identifiers they type into shared written feedback. The public demo account switcher and known passwords are authentication simulations, **not production anti-collusion controls**. Do not expose this demo to untrusted users or enter private recordings/credentials.
+
+## Existing data: migrate, never reset to upgrade
+
+Starting with an existing supported v2 database creates `data/tutti.pre-v3.sqlite`, migrates additively to schema 3, preserves existing IDs, rows, reviews, messages and uploaded files, and adds the new fictional school/opportunity seeds once. Restarts are idempotent. Unsupported/future schemas fail with instructions instead of deleting data. The migration backup contains the database only: back up the entire `data/` directory separately to include uploads.
+
+`data/` is git-ignored; profile uploads live under `data/uploads/clips/`, submissions under `data/uploads/submissions/`, sanitized audio under `data/blind-audio/`. Seed recordings live in `my-clips/`; live-demo upload examples live in `demo-uploads/`. Missing sample recordings show an honest unavailable state.
+
+`python3 run.py --reset` is an explicit destructive option for disposable demo data only; **do not use it for an upgrade**. It preserves `my-clips/` and `demo-uploads/`, not database/uploads.
+
+## API areas and implementation
+
+- `/api/opportunities`, `/api/auditions`, `/api/my/applications`: discovery, creation, ownership, submissions and status.
+- `/api/submissions/<id>` and its `/audio`, `/review`, `/feedback`, `/status` routes: creator-only review; `/notification` records a template notice.
+- `/api/auditions/<id>/rubric`, `/guests`, `/announcements`, `/notices`, `/outbox`: creator-only rubric, scoped guest administration and local delivery records.
+- `/api/guest/...`: scoped capability access via `X-Review-Key`; guest page links carry the key in the fragment, remove it from browser history and do not put it in media URLs.
+- `/api/schools`, `/api/musicians/<handle>`, `/api/me`, `/api/my/notices`: owned school data, profiles, education, connections and musician notices.
+- Existing community, teachers, ensembles, gigs and upload APIs remain. `/api/conversations` and descendants return 404.
+
+Failures are logged server-side or displayed with browser error records and actionable messages. `server/` splits migration, PCM sanitization and each API responsibility; `static/js/pages/` splits page behavior; `tests/` covers existing features plus privacy, immutable modes, roles, guest/composite isolation, notification simulation and populated-v2 migration.

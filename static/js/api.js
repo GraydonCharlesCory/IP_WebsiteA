@@ -111,13 +111,10 @@
     setSubmissionStatus: (id, fields) => request('PUT', `/api/submissions/${id}/status`, fields),
     shareFeedback: (id, shared, includeNotes) => request('PUT', `/api/submissions/${id}/feedback`, { shared, include_notes: !!includeNotes }),
     // Credibility
-    endorse: (handle, text, relationship) => request('POST', `/api/musicians/${encodeURIComponent(handle)}/endorsements`, { text, relationship }),
+    endorse: (handle, text, relationship) => request('POST', `/api/musicians/${encodeURIComponent(handle)}/connections`, { text, relationship }),
     addBadge: (kind, label) => request('POST', '/api/me/badges', { kind, label }),
-    // Messaging
-    conversations: () => get('/api/conversations'),
-    conversation: (id) => get(`/api/conversations/${id}`),
-    startConversation: (fields) => request('POST', '/api/conversations', fields),
-    sendMessage: (id, body) => request('POST', `/api/conversations/${id}/messages`, { body }),
-    markConversationRead: (id) => request('POST', `/api/conversations/${id}/read`),
+    // Notices and simulated email only; direct conversations have been removed.
+    request,
+    notices: () => get('/api/my/notices'),
   };
 })();

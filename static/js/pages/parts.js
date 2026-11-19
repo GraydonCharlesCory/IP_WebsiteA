@@ -57,29 +57,29 @@
       : `<span class="tag grey">Closes ${esc(date(audition.deadline))}</span>`;
   }
 
-  const directorLine = (audition) => esc([audition.director.name, audition.ensemble].filter(Boolean).join(' · '));
+  const directorLine = (audition) => esc([audition.ensemble].filter(Boolean).join(' · '));
 
   /* Card in the open-auditions row. */
   function auditionCard(audition) {
     return `<a class="card aud" href="${auditionHref(audition)}">
       <div class="top">${categoryTag(audition.category)}${deadlineTag(audition)}</div>
       <h3>${esc(audition.title)}</h3>
-      <div class="ens">${avatar(audition.director, 'sm')}${directorLine(audition)}</div>
+      <div class="ens">${directorLine(audition)}</div>
       <div class="foot"><span>${esc(audition.instruments.join(', '))}</span><span>Closes ${esc(date(audition.deadline))}</span></div></a>`;
   }
 
   /* Compact row for a side column. */
   function auditionMini(audition) {
     return `<a class="mini-aud" href="${auditionHref(audition)}"><b>${esc(audition.title)}</b>
-      <span>${esc(audition.ensemble || audition.director.name)} · closes ${esc(date(audition.deadline))}</span></a>`;
+      <span>${esc(audition.ensemble || 'Organization')} · closes ${esc(date(audition.deadline))}</span></a>`;
   }
 
   /* Audition shown as a post in the section feed. */
   function auditionPost(audition) {
     return `<article class="card post aud-post">
-      <div class="post-head">${avatar(audition.director)}
-        <div class="who"><div class="name">${esc(audition.ensemble || audition.director.name)} <span class="muted posted">posted an audition</span></div>
-        <div class="meta">${esc(audition.director.name)}, Director · ${esc(timeAgo(audition.created))}</div></div>
+      <div class="post-head">
+        <div class="who"><div class="name">${esc(audition.ensemble || 'Organization')} <span class="muted posted">posted an audition</span></div>
+        <div class="meta">Organization · ${esc(timeAgo(audition.created))}</div></div>
         <span class="tag brass">Audition</span></div>
       <h3>${esc(audition.title)}</h3>
       <div class="row"><span>${esc(audition.instruments.join(', '))}</span><span>${deadlineTag(audition)}</span></div>

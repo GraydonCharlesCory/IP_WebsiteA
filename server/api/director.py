@@ -10,7 +10,7 @@ from .opportunity_queries import opportunities_list
 def dashboard(ctx):
     director = require_role(ctx, "director", "open the director dashboard")
     conn, me = ctx.db, director["id"]
-    auditions = opportunities_list(ctx, mine=True, type="audition")
+    auditions = [o for o in opportunities_list(ctx, mine=True) if o["type"] != "gig"]
     gigs = opportunities_list(ctx, mine=True, type="gig")
     for item in auditions:
         item.update(_audition_counts(conn, item["id"]))

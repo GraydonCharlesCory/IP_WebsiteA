@@ -2,7 +2,7 @@
 (function () {
   const { esc, timeAgo } = Tutti.util;
   const { avatar } = Tutti.components;
-  const { AVAILABILITY_LABELS, messageHref, profileHref } = Tutti.opportunityCards;
+  const { AVAILABILITY_LABELS, profileHref } = Tutti.opportunityCards;
   const { privateNote } = Tutti.pageUtil;
 
   function musicianCard(gig) {
@@ -18,7 +18,7 @@
   function subRow(person) {
     return `<div class="sub-row">${avatar(person, 'sm')}<a class="who" href="${profileHref(person)}"><b>${esc(person.name)}</b>
       <span>${esc(person.instrument)}${person.location ? ` · ${esc(person.location)}` : ''} · marked ${timeAgo(person.marked)}</span></a>
-      <a class="btn btn-ghost sub-msg" href="${messageHref(person.id)}">Message</a></div>`;
+      </div>`;
   }
 
   function subGroup(label, people) {

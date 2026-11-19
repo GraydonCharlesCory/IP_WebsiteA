@@ -31,11 +31,10 @@
 
   function feedbackCard(feedback) {
     if (!feedback) {
-      return '<div class="note-card muted-card"><div class="eyebrow">Feedback</div><p class="t2 small">Feedback not shared. The director has not shared scores or comments for this application.</p></div>';
+      return '<div class="note-card muted-card"><div class="eyebrow">Feedback</div><p class="t2 small">Feedback not shared. The director has not shared comments for this application.</p></div>';
     }
     return `<div class="note-card feedback"><div class="fb-head"><div class="eyebrow">Shared feedback</div>
-        <div class="avg"><b>${Number(feedback.average).toFixed(1)}</b><span>average</span></div></div>
-      <div class="scores">${scoreBars(feedback.scores)}</div>
+        </div>
       ${feedback.comments ? `<blockquote>${esc(feedback.comments)}</blockquote>` : ''}${notesList(feedback.notes)}
       <div class="small muted">Shared ${esc(date(feedback.shared_at, { month: 'short', day: 'numeric', year: 'numeric' }))}</div></div>`;
   }

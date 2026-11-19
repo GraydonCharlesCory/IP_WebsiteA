@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS auditions (
   id INTEGER PRIMARY KEY,
   director_id INTEGER NOT NULL REFERENCES users(id),
   ensemble_id INTEGER REFERENCES ensembles(id),
-  type TEXT NOT NULL DEFAULT 'audition' CHECK (type IN ('audition','gig')),
+  type TEXT NOT NULL DEFAULT 'audition' CHECK (type IN ('audition','gig','grant','residency','college_audition','summer_camp')),
   category TEXT NOT NULL,
   title TEXT NOT NULL,
   ensemble TEXT NOT NULL,

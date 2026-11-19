@@ -1,12 +1,13 @@
 """Searching opportunities (auditions and gigs) and shaping them for the signed-in viewer."""
 from ..auth import require_user
+from ..discovery import metadata, GENRES, ELIGIBILITY
 from ..validation import parse_flag, require_category, require_choice, require_date
 from .ensemble_json import ensemble_brief
 from .gigs import available_count, gig_json, my_availability
-from .serializers import audition_json
+from .serializers import audition_json, brief_user
 from .statuses import STATUS_LABELS
 
-TYPES = ("audition", "gig")
+TYPES = ("audition", "gig", "grant", "residency", "college_audition", "summer_camp")
 LEVELS = ("student", "college", "semi-pro", "pro")
 SORTS = ("deadline", "newest")
 _ORDER = {
@@ -18,6 +19,12 @@ _ORDER = {
 def parse_filters(query: dict) -> dict:
     """Validated search filters from a query string (see the README for each one)."""
     filters = {key: query[key].strip() for key in ("q", "instrument", "location") if query.get(key, "").strip()}
+    if query.get("genre"):
+        filters["genre"] = require_choice(query["genre"], GENRES, "genre")
+    if query.get("eligibility"):
+        filters["eligibility"] = require_choice(query["eligibility"], ELIGIBILITY, "eligibility")
+    if query.get("student_hub"):
+        filters["student_hub"] = parse_flag(query["student_hub"], "student_hub")
     if query.get("category"):
         filters["category"] = require_category(query["category"])
     if query.get("type"):
@@ -63,6 +70,15 @@ def _where(filters: dict, user) -> tuple:
     if "q" in filters:
         clauses.append("lower(title || ' ' || ensemble || ' ' || description || ' ' || instruments || ' ' || city || ' ' || state) LIKE ?")
         args.append(f"%{filters['q'].lower()}%")
+    if "genre" in filters:
+        clauses.append("id IN (SELECT audition_id FROM opportunity_discovery WHERE genre=?)")
+        args.append(filters["genre"])
+    if "eligibility" in filters:
+        clauses.append("id IN (SELECT audition_id FROM opportunity_discovery WHERE EXISTS (SELECT 1 FROM json_each(eligibility) WHERE value=?))")
+        args.append(filters["eligibility"])
+    if "student_hub" in filters:
+        clauses.append("id IN (SELECT audition_id FROM opportunity_discovery WHERE student_hub=?)")
+        args.append(int(filters["student_hub"]))
     return (" AND ".join(clauses) or "1=1"), args
 
 
@@ -79,7 +95,9 @@ def opportunity_json(ctx, row) -> dict:
     """Full opportunity for the signed-in viewer: musicians get their own application or availability, the owner gets counts."""
     user, conn = ctx.user, ctx.db
     director = conn.execute("SELECT * FROM users WHERE id=?", (row["director_id"],)).fetchone()
-    data = audition_json(row, director)
+    data = {**audition_json(row, director), **metadata(conn, row["id"])}
+    if row["type"] == "gig" and user["role"] != "musician":
+        data["director"] = brief_user(director)
     ensemble = conn.execute("SELECT * FROM ensembles WHERE id=?", (row["ensemble_id"],)).fetchone() if row["ensemble_id"] else None
     data["ensemble_info"] = ensemble_brief(ensemble) if ensemble else None
     data["gig"] = gig_json(conn, row["id"])

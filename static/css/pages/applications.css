@@ -13,7 +13,7 @@
 .track li i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;background:var(--surface-2);border:1px solid var(--line);flex:none}
 .track li.done{color:var(--text-2)}.track li.done i{background:rgba(78,210,154,.18);border-color:var(--ok);color:var(--ok)}
 .track li.now{color:var(--text)}.track li.now i{background:var(--brass);border-color:var(--brass);color:var(--brass-ink)}
-.track li.now.no i{background:var(--orch);border-color:var(--orch);color:#fff}
+.track li.now.no i{background:var(--orch);border-color:var(--orch);color:var(--brass-ink)}
 .note-card{border:1px solid var(--line);border-radius:var(--r);background:var(--bg-2);padding:16px 18px;display:grid;gap:12px}
 .note-card.callback{border-color:rgba(78,210,154,.4)}
 .cb-facts{display:flex;gap:32px;flex-wrap:wrap}
@@ -27,3 +27,17 @@ blockquote{border-left:3px solid var(--brass);padding-left:14px;color:var(--text
 .meter{height:6px;border-radius:6px;background:var(--line);overflow:hidden}.meter i{display:block;height:100%;background:var(--brass)}
 .fb-notes{display:grid;gap:8px;font-size:14px;color:var(--text-2)}.fb-notes .tag{margin-right:10px}
 @media (max-width:700px){.track li span{display:none}.track li.now span{display:inline}}
+.application-search{display:grid;gap:16px;margin-bottom:24px}
+.application-search .field{font-size:12px}
+.application-search .btn{justify-self:start}
+.application-filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.application-tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-bottom:20px;flex-wrap:wrap}
+.application-tabs button{padding:12px 0;min-height:44px;color:var(--muted)}
+.application-tabs button[aria-selected=true]{border-bottom:3px solid var(--brass);color:var(--text)}
+#applicationResultCount{margin-bottom:20px}
+.application-meta{font-size:12px}
+.app{padding:26px}.app h3{font-size:21px;letter-spacing:-.02em}
+@media(max-width:760px){.application-filters{grid-template-columns:1fr}.app{padding:21px}.application-tabs{gap:18px}.application-tabs button{font-size:12px}}
+
+@media(min-width:761px) and (max-width:1199px){.application-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#submittedStatusField{max-width:280px;margin-bottom:20px}

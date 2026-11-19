@@ -39,8 +39,7 @@ class IdentityHiddenFromDirectorsTests(ServerTestCase):
                 for item in listing[1].get("submissions", []):
                     self.get(handle, f"/api/submissions/{item['id']}")
                     self.get(handle, f"/api/submissions/{item['id']}/audio")
-        for conversation in self.get(handle, "/api/conversations")[1]["conversations"]:
-            self.get(handle, f"/api/conversations/{conversation['id']}")
+        self.assertEqual(self.get(handle, "/api/conversations/1")[0], 404)
         return director
 
     def test_every_director_sees_no_identity_in_the_seeded_data(self):
@@ -63,24 +62,10 @@ class IdentityHiddenFromDirectorsTests(ServerTestCase):
         for handle in DIRECTOR_HANDLES:
             self.walk_director(handle)
 
-    def test_conversations_with_applicants_stay_anonymous_for_the_director(self):
-        elena = self.directors["elena-voss"]
-        audition = [o for o in elena.json("GET", "/api/director/dashboard")[1]["auditions"] if o["submission_count"]][0]
-        for item in elena.json("GET", f"/api/auditions/{audition['id']}/submissions")[1]["submissions"]:
-            self.assert_clean("start", *elena.json("POST", "/api/conversations", {"submission_id": item["id"], "body": "Hello from the panel."}))
-        for handle in ("adam-reyes", "sofia-lindgren"):
-            musician = self.client(handle)
-            for conversation in musician.json("GET", "/api/conversations")[1]["conversations"]:
-                musician.json("POST", f"/api/conversations/{conversation['id']}/messages", {"body": "Thank you!"})
-        listing = elena.json("GET", "/api/conversations")[1]["conversations"]
-        self.assertGreaterEqual(len(listing), 2)
-        for conversation in listing:
-            self.assertTrue(conversation["other"]["anonymous"])
-            self.assertIsNone(conversation["other"]["id"])
-        self.walk_director("elena-voss")
-
-    def test_seeded_director_threads_show_an_anonymous_partner(self):
-        naomi = self.directors["naomi-castellanos"]
-        thread = naomi.json("GET", "/api/conversations")[1]["conversations"][0]
-        self.assertEqual((thread["other"]["anonymous"], thread["other"]["handle"], thread["other"]["id"]), (True, None, None))
-        self.assertTrue(thread["other"]["name"].startswith("Applicant "))
+    def test_seeded_threads_and_new_contact_routes_are_unreachable(self):
+        for handle in (*DIRECTOR_HANDLES, "adam-reyes", "sofia-lindgren", None):
+            client = self.client(handle)
+            for method, path in (("GET", "/api/conversations"), ("GET", "/api/conversations/1"),
+                                 ("POST", "/api/conversations"), ("POST", "/api/conversations/1/messages"),
+                                 ("POST", "/api/conversations/1/read")):
+                self.assertEqual(client.json(method, path, {"body": "No contact"})[0], 404)

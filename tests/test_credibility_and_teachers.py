@@ -2,29 +2,29 @@ from tests.support import ServerTestCase
 
 
 class CredibilityTests(ServerTestCase):
-    def test_profile_carries_badges_and_endorsements(self):
+    def test_profile_carries_badges_and_connections(self):
         profile = self.client().json("GET", "/api/musicians/adam-reyes")[1]
         union = [b for b in profile["badges"] if b["kind"] == "union"][0]
         self.assertEqual((union["label"], union["verified_by_tutti"]), ("AFM Local 802", True))
         self.assertIn(False, [b["verified_by_tutti"] for b in profile["badges"]])
-        self.assertEqual(profile["endorsements"][0]["author"]["handle"], "elena-voss")
-        self.assertTrue(profile["endorsements"][0]["relationship"])
+        self.assertEqual(profile["connections"][0]["author"]["handle"], "elena-voss")
+        self.assertTrue(profile["connections"][0]["relationship"])
         listed = {m["handle"]: m for m in self.client().json("GET", "/api/musicians")[1]["musicians"]}
         self.assertTrue(listed["ronald-pierce"]["badges"])
 
     def test_who_may_endorse(self):
         text = {"text": "Wonderful player.", "relationship": "Taught her"}
-        path = "/api/musicians/jordan-wells/endorsements"
+        path = "/api/musicians/jordan-wells/connections"
         self.assertEqual(self.client().json("POST", path, text)[0], 401)
         for handle in ("leo-marquez", "alex-chen", "jordan-wells"):  # musicians who are not teachers (and not themselves)
             self.assertEqual(self.client(handle).json("POST", path, text)[0], 403, handle)
         for handle in ("priya-raman", "ronald-pierce"):  # a director and a teacher
             status, data = self.client(handle).json("POST", path, text)
-            self.assertEqual((status, data["endorsement"]["author"]["handle"]), (201, handle))
-        self.assertEqual(self.client("ronald-pierce").json("POST", "/api/musicians/ronald-pierce/endorsements", text)[0], 403)
+            self.assertEqual((status, data["connection"]["author"]["handle"]), (201, handle))
+        self.assertEqual(self.client("ronald-pierce").json("POST", "/api/musicians/ronald-pierce/connections", text)[0], 403)
         self.assertEqual(self.client("priya-raman").json("POST", path, {"text": " "})[0], 400)
-        self.assertEqual(self.client("priya-raman").json("POST", "/api/musicians/nobody/endorsements", text)[0], 404)
-        names = [e["author"]["handle"] for e in self.client().json("GET", "/api/musicians/jordan-wells")[1]["endorsements"]]
+        self.assertEqual(self.client("priya-raman").json("POST", "/api/musicians/nobody/connections", text)[0], 404)
+        names = [e["author"]["handle"] for e in self.client().json("GET", "/api/musicians/jordan-wells")[1]["connections"]]
         self.assertEqual(names[:2], ["ronald-pierce", "priya-raman"])
 
     def test_self_claimed_badges_are_never_verified(self):
@@ -57,5 +57,5 @@ class BecomeTeacherTests(ServerTestCase):
         self.assertEqual((status, data["user"]["teaching"]["rate"], data["user"]["is_teacher"]), (200, "$60/hr", True))
         self.assertIn("dana-brooks", [t["handle"] for t in self.client().json("GET", "/api/teachers?instrument=saxophone")[1]["teachers"]])
         self.assertEqual(dana.json("PUT", "/api/me", {"instruments_taught": "sax"})[0], 400)
-        endorse = dana.json("POST", "/api/musicians/jordan-wells/endorsements", {"text": "Great ear."})
+        endorse = dana.json("POST", "/api/musicians/jordan-wells/connections", {"text": "Great ear."})
         self.assertEqual(endorse[0], 201)

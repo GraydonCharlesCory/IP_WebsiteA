@@ -41,12 +41,12 @@
         <div class="file"><div style="flex:1"><b>${esc(chosenName())}</b>
           <div class="small muted">${stamps} timestamp${stamps === 1 ? '' : 's'} · ${state.note ? 'note included' : 'no note'}</div>${progress}</div></div>
         <label class="check"><input type="checkbox" id="confirmBox" ${state.confirmed ? 'checked' : ''}>This is my own unedited recording.</label>
-        ${Tutti.pageUtil.privateNote(`Your submission is visible only to ${audition.director.name}. It won't appear on your public profile.`)}`;
+        ${Tutti.pageUtil.privateNote('Visible to the organizer and scoped judges, not posted publicly. For blind review, do not speak your name, school or other identifying information in the recording.')}`;
     }
 
     function stepDone() {
       return `<div class="done"><div class="ring">✓</div><h2>Submitted</h2>
-        <p class="t2" style="margin-top:8px">${esc(audition.director.name)} will review your clip.</p></div>`;
+        <p class="t2" style="margin-top:8px">The organizer will review your clip.</p></div>`;
     }
 
     function render() {

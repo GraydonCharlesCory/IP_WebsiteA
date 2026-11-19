@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY,
-  role TEXT NOT NULL CHECK (role IN ('musician','director')),
+  role TEXT NOT NULL CHECK (role IN ('musician','director','school')),
   name TEXT NOT NULL,
   handle TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL UNIQUE,

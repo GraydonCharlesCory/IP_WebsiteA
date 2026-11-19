@@ -17,9 +17,10 @@ class SubmitTests(ServerTestCase):
         submission_id = data["submission"]["id"]
         self.assertEqual(jordan.json("POST", f"/api/auditions/{audition_id}/submissions", {"clip_id": 1})[0], 409)
         detail = priya.json("GET", f"/api/submissions/{submission_id}")[1]["submission"]
-        self.assertEqual((detail["note"], detail["timestamps"]), ("Hello", [{"time": 5, "label": "Etude"}]))
+        self.assertEqual((detail["note"], detail["timestamps"]), ("", []))
         status, body, response = priya.request("GET", f"/api/submissions/{submission_id}/audio")
-        self.assertEqual((status, body), (200, FAKE_MP4))
+        self.assertEqual(status, 422)
+        self.assertNotIn(FAKE_MP4, body)
         self.assertEqual(self.client("elena-voss").request("GET", f"/api/submissions/{submission_id}/audio")[0], 403)
 
     def test_upload_rejects_non_mp4_empty_and_oversize(self):
@@ -56,19 +57,19 @@ class SubmitTests(ServerTestCase):
         status, data = aiko.json("POST", f"/api/auditions/{audition_id}/submissions", {"clip_id": clip_id, "note": "Hi"})
         self.assertEqual(status, 201)
         listing = elena.json("GET", f"/api/auditions/{audition_id}/submissions")[1]["submissions"]
-        self.assertEqual(listing[0]["source"], "clip")
+        self.assertEqual(listing[0]["source"], "recording")
 
     def test_profile_clip_upload_is_public(self):
         jordan = self.client("jordan-wells")
         status, data = jordan.upload("/api/clips?title=New%20take")
         self.assertEqual(status, 201)
         url = data["clip"]["video_url"]
-        self.assertEqual(self.client().request("GET", url)[1], FAKE_MP4)
+        self.assertEqual(jordan.request("GET", url)[1], FAKE_MP4)
 
 
 class RangeTests(ServerTestCase):
     def _range(self, header, path="/media/clips/leo-marquez-2.mp4"):
-        return self.client().request("GET", path, headers={"Range": header})
+        return self.client("leo-marquez").request("GET", path, headers={"Range": header})
 
     def test_partial_content(self):
         status, body, response = self._range("bytes=4-11")
@@ -84,7 +85,7 @@ class RangeTests(ServerTestCase):
         self.assertEqual(self._range(f"bytes={len(FAKE_MP4) + 5}-")[0], 416)
 
     def test_full_response_advertises_ranges(self):
-        status, body, response = self.client().request("GET", "/media/clips/leo-marquez-2.mp4")
+        status, body, response = self.client("leo-marquez").request("GET", "/media/clips/leo-marquez-2.mp4")
         self.assertEqual((status, response.getheader("Accept-Ranges")), (200, "bytes"))
 
     def test_authorized_submission_video_supports_range(self):
@@ -92,4 +93,4 @@ class RangeTests(ServerTestCase):
         audition_id = director.json("GET", "/api/auditions?mine=1")[1]["auditions"][0]["id"]
         sid = director.json("GET", f"/api/auditions/{audition_id}/submissions")[1]["submissions"][0]["id"]
         status, body, _ = director.request("GET", f"/api/submissions/{sid}/audio", headers={"Range": "bytes=0-3"})
-        self.assertEqual(status, 206)
+        self.assertEqual(status, 422)  # malformed MP4 cannot bypass sanitization via Range

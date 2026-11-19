@@ -10,15 +10,15 @@
     function render() {
       const error = state.error ? `<div class="form-error" role="alert">${esc(state.error)}</div>` : '';
       scrim.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="dialogTitle" style="max-width:480px">
-        <div class="mhead"><div><div class="eyebrow">Endorse</div><h3 style="margin-top:4px" id="dialogTitle">${esc(musician.name)}</h3></div>
+        <div class="mhead"><div><div class="eyebrow">Professional connection</div><h3 style="margin-top:4px" id="dialogTitle">${esc(musician.name)}</h3></div>
           <button id="dialogClose" class="t2" style="font-size:22px" aria-label="Close" ${state.busy ? 'disabled' : ''}>×</button></div>
         <div class="mbody">
           <div class="field"><label for="relationshipInput">How do you know them?</label>
             <input class="input" id="relationshipInput" maxlength="120" placeholder="e.g. Hired her as a sub, taught him for two years"></div>
-          <div class="field"><label for="endorseText">Your endorsement</label>
-            <textarea class="input" id="endorseText" maxlength="600" placeholder="What makes them a player others should trust?"></textarea></div>${error}</div>
+          <div class="field"><label for="endorseText">Connection description</label>
+            <textarea class="input" id="endorseText" maxlength="600" placeholder="Describe your professional or educational relationship. No advertising."></textarea></div>${error}</div>
         <div class="mfoot"><span class="small muted">Shown publicly on their profile.</span>
-          <button class="btn btn-primary" id="endorseSubmit" ${state.busy ? 'disabled' : ''}>${state.busy ? 'Posting…' : 'Post endorsement'}</button></div></div>`;
+          <button class="btn btn-primary" id="endorseSubmit" ${state.busy ? 'disabled' : ''}>${state.busy ? 'Posting…' : 'Post connection'}</button></div></div>`;
       scrim.querySelector('#dialogClose').onclick = close;
       scrim.querySelector('#endorseSubmit').onclick = submit;
     }

@@ -1,4 +1,4 @@
-"""Blind review is always on: a director never learns who an applicant is, in any status."""
+"""Blind auditions never reveal an applicant, in any status."""
 import json
 
 from tests.support import FAKE_MP4, ServerTestCase, find_opportunity, musician_identity_patterns
@@ -28,7 +28,7 @@ class BlindReviewTests(ServerTestCase):
             self.assertIsNone(pattern.search(text), pattern.pattern)
 
     def test_audition_json_has_no_blind_switch(self):
-        self.assertNotIn("blind_review", self.audition)
+        self.assertTrue(self.audition["blind_review"])
 
     def test_list_detail_and_audio_hide_identity(self):
         listing = self.elena.json("GET", self.listing_path)[1]
@@ -42,7 +42,8 @@ class BlindReviewTests(ServerTestCase):
         self.assertNotIn("musician_clips", detail["submission"])  # no clips (and so no video) of the applicant, ever
         self.assertNotIn("video_url", detail["submission"])
         status, body, response = self.elena.request("GET", f"/api/submissions/{self.sofia}/audio")
-        self.assertEqual((status, body), (200, FAKE_MP4))
+        self.assertEqual(status, 422)  # malformed fixture never falls back to original video
+        self.assertNotIn(FAKE_MP4, body)
         self.assertNotIn("aiko", str(response.getheaders()))
 
     def test_no_video_thumbnail_or_poster_routes_exist(self):
@@ -63,7 +64,7 @@ class BlindReviewTests(ServerTestCase):
         self.assertEqual((status, data["submission"]["status"], data["submission"]["musician"]["anonymous"]), (200, "callback", True))
         self._assert_no_identity(data)
         self.assertNotIn("musician_clips", data["submission"])
-        self.assertEqual(self.elena.request("GET", f"/api/submissions/{self.sofia}/audio")[0], 200)
+        self.assertEqual(self.elena.request("GET", f"/api/submissions/{self.sofia}/audio")[0], 422)
         status, data = self.elena.json("PUT", f"/api/submissions/{self.sofia}/status", {"status": "submitted"})
         self._assert_no_identity(data)
 
@@ -88,7 +89,7 @@ class BlindReviewTests(ServerTestCase):
         for value in (False, 0, "false", None):
             status, data = self.elena.json("PUT", f"/api/auditions/{self.audition['id']}", {"blind_review": value})
             self.assertEqual(status, 400, value)
-            self.assertIn("always on", data["error"])
+            self.assertIn("immutable", data["error"])
         self._assert_no_identity(self.elena.json("GET", f"/api/submissions/{self.sofia}")[1])
 
     def test_label_is_stable_between_list_and_detail(self):
@@ -96,52 +97,14 @@ class BlindReviewTests(ServerTestCase):
         again = self.elena.json("GET", f"/api/submissions/{self.sofia}")[1]["submission"]
         self.assertEqual(item["musician"]["name"], again["musician"]["name"])
 
-    def test_director_messages_an_applicant_through_the_submission_and_stays_anonymous(self):
-        status, data = self.elena.json("POST", "/api/conversations", {"submission_id": self.sofia, "body": "Thanks for applying."})
-        self.assertIn(status, (200, 201))  # 200 when another test already opened Elena's thread with Sofia
-        self.assertEqual(data["conversation"]["context"], {"opportunity": None, "submission_id": None})
-        self.assertTrue(data["conversation"]["other"]["name"].startswith("Applicant C-"))
-        self._assert_no_identity(data)
-        sofia = self.client("sofia-lindgren")
-        thread_id = data["conversation"]["id"]
-        received = sofia.json("GET", f"/api/conversations/{thread_id}")[1]["messages"]
-        self.assertEqual(received[-1]["body"], "Thanks for applying.")  # the musician receives it
-        sofia.json("POST", f"/api/conversations/{thread_id}/messages", {"body": "Happy to play live."})
-        self._assert_no_identity(self.elena.json("GET", "/api/conversations")[1])
-        thread = self.elena.json("GET", f"/api/conversations/{thread_id}")[1]
-        self._assert_no_identity(thread)
-        self.assertEqual(thread["messages"][-1]["sender_id"], None)
-
-    def test_conversation_a_director_starts_by_user_id_still_shows_an_anonymous_partner(self):
-        sofia_id = self.client("sofia-lindgren").json("GET", "/api/me")[1]["user"]["id"]
-        status, data = self.elena.json("POST", "/api/conversations", {"user_id": sofia_id, "body": "hi"})
-        self.assertEqual((status, data["conversation"]["other"]["anonymous"], data["conversation"]["other"]["name"].startswith("Applicant C-")), (201, True, True))
-        self._assert_no_identity(data)
-
-    def test_user_id_lookup_never_ties_a_named_musician_to_an_audition(self):
-        naomi = self.client("naomi-castellanos")
-        adam_id = self.client("adam-reyes").json("GET", "/api/me")[1]["user"]["id"]
-        naomis = [o for o in naomi.json("GET", "/api/director/dashboard")[1]["auditions"]][0]
-        adam = self.client("adam-reyes")
-        clip_id = adam.json("GET", "/api/musicians/adam-reyes")[1]["clips"][0]["id"]
-        sid = adam.json("POST", f"/api/auditions/{naomis['id']}/submissions", {"clip_id": clip_id})[1]["submission"]["id"]
-        naomi_id = naomi.json("GET", "/api/me")[1]["user"]["id"]
-        adam.json("POST", "/api/conversations", {"user_id": naomi_id, "submission_id": sid, "audition_id": naomis["id"]})
-        for call in (lambda: naomi.json("POST", "/api/conversations", {"user_id": adam_id}),
-                     lambda: naomi.json("POST", "/api/conversations", {"user_id": adam_id, "body": "hi"})):
-            status, data = call()
-            self.assertIn(status, (200, 201))
-            self.assertEqual(data["conversation"]["context"], {"opportunity": None, "submission_id": None})
-            self._assert_no_identity(data)
-        listing = naomi.json("GET", "/api/conversations")[1]["conversations"]
-        detail = naomi.json("GET", f"/api/conversations/{data['conversation']['id']}")[1]["conversation"]
-        for item in listing + [detail]:
-            self.assertEqual(item["context"], {"opportunity": None, "submission_id": None})
-        self.assertEqual(adam.json("GET", f"/api/conversations/{detail['id']}")[1]["conversation"]["context"]["submission_id"], sid)  # the musician keeps it
-
-    def test_director_cannot_link_someone_elses_submission(self):
-        status, _ = self.client("priya-raman").json("POST", "/api/conversations", {"submission_id": self.sofia, "body": "hi"})
-        self.assertEqual(status, 403)
+    def test_direct_messages_cannot_link_or_contact_an_applicant(self):
+        for handle in ("elena-voss", "priya-raman", "sofia-lindgren"):
+            client = self.client(handle)
+            for data in ({"submission_id": self.sofia, "body": "Hello"},
+                         {"user_id": 1, "audition_id": self.audition["id"]}):
+                self.assertEqual(client.json("POST", "/api/conversations", data)[0], 404)
+            self.assertEqual(client.json("GET", "/api/conversations/1")[0], 404)
+        self._assert_no_identity(self.elena.json("GET", f"/api/submissions/{self.sofia}")[1])
 
 
 class EveryAuditionIsBlindTests(ServerTestCase):

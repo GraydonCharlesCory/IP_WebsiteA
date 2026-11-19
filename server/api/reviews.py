@@ -1,7 +1,7 @@
 """Director scoring: five 1-10 criteria (average computed), comments, timestamped notes, decision."""
 import json
 
-from ..db import now_iso
+from ..db import now_iso, load_list
 from ..durations import require_within
 from ..errors import bad_request
 from . import ROUTER
@@ -39,16 +39,17 @@ def save_review(ctx):
     Body: {scores: {tone, rhythm, technique, musicality, preparation}, comments, notes: [{time, text}],
     decision: "shortlist" | "pass" | null}.
     """
-    submission, _ = owned_submission(ctx, ctx.params["submission_id"])
+    from .judging import director_review
+    submission, audition = owned_submission(ctx, ctx.params["submission_id"])
+    criteria = load_list(audition["rubric"])
     data = ctx.json()
     existing = ctx.db.execute("SELECT * FROM reviews WHERE submission_id=?", (submission["id"],)).fetchone()
-    current = review_json(existing) if existing else {"scores": dict.fromkeys(REVIEW_CRITERIA), "comments": "", "notes": [], "decision": None}
+    current = director_review(existing) if existing else {"scores": dict.fromkeys(criteria), "comments": "", "notes": [], "decision": None}
 
-    incoming = data.get("scores") or {}
-    unknown = set(incoming) - set(REVIEW_CRITERIA)
-    if not isinstance(incoming, dict) or unknown:
-        raise bad_request(f"Scores must use these criteria: {', '.join(REVIEW_CRITERIA)}.")
-    scores = {name: _score(incoming[name], name) if name in incoming else current["scores"][name] for name in REVIEW_CRITERIA}
+    incoming = data.get("scores", {})
+    if not isinstance(incoming, dict) or set(incoming) - set(criteria):
+        raise bad_request(f"Scores must use these criteria: {', '.join(criteria)}.")
+    scores = {name: _score(incoming[name], name) if name in incoming else current["scores"].get(name) for name in criteria}
     comments = str(data["comments"]).strip()[:5000] if "comments" in data else current["comments"]
     notes = _notes(data["notes"], submission["duration_sec"]) if "notes" in data else current["notes"]
     decision = data["decision"] if "decision" in data else current["decision"]
@@ -61,11 +62,12 @@ def save_review(ctx):
         " technique=excluded.technique, musicality=excluded.musicality, preparation=excluded.preparation,"
         " average=excluded.average, comments=excluded.comments, notes=excluded.notes, decision=excluded.decision,"
         " updated=excluded.updated",
-        (submission["id"], *(scores[n] for n in REVIEW_CRITERIA), average_of(scores), comments, json.dumps(notes), decision, now_iso()),
+        (submission["id"], *(scores.get(n) for n in REVIEW_CRITERIA), average_of(scores), comments, json.dumps(notes), decision, now_iso()),
     )
+    ctx.db.execute("UPDATE reviews SET rubric_scores=? WHERE submission_id=?", (json.dumps(scores), submission["id"]))
     if decision and decision != current["decision"]:  # an auto-save repeating a decision must not undo a callback
         ctx.db.execute("UPDATE submissions SET status=? WHERE id=?", (DECISION_TO_STATUS[decision], submission["id"]))
     ctx.db.commit()
     saved = ctx.db.execute("SELECT * FROM reviews WHERE submission_id=?", (submission["id"],)).fetchone()
     status = ctx.db.execute("SELECT status FROM submissions WHERE id=?", (submission["id"],)).fetchone()["status"]
-    return {"review": review_json(saved), "status": status}
+    return {"review": director_review(saved), "status": status}
