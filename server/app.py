@@ -80,7 +80,7 @@ def make_handler(settings: Settings):
             if self.close_connection:
                 self.send_header("Connection", "close")
             if cookie:
-                self.s end_header("Set-Cookie", cookie)
+                self.send_header("Set-Cookie", cookie)
             self.end_headers()
             if self.command != "HEAD":
                 self.wfile.write(payload)

@@ -19,14 +19,14 @@ def main() -> int:
     settings = Settings()
     try:
         prepare_data(settings, reset=args.reset)
-        server = make_server(settings, args.port, "0.0.0.0")
+        server = make_server(settings, args.port, host = "0.0.0.0")
     except SchemaOutOfDate as error:
         log.error("%s", error)
         return 1
     except OSError as error:
         log.error("Could not start on port %d: %s. Try another with --port.", args.port, error)
         return 1
-    log.info("Tutti is running (Ctrl+C to stop)", args.port)
+    print("Tutti is running (Ctrl+C to stop)", args.port)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
